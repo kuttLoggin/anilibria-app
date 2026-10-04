@@ -6,14 +6,17 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
-import ru.radiationx.data.datasource.holders.AppPreference
 import ru.radiationx.data.entity.common.PlayerQuality
 import ru.radiationx.data.entity.domain.release.QualityInfo
+import ru.radiationx.data.entity.domain.types.ReleaseId
 import java.lang.reflect.Proxy
 
 class PlayerQualityPreferenceTest {
+    private val allQualities = QualityInfo("sd", "hd", "fhd")
 
     @Test
     fun `select highest quality within both screen dimensions`() {
@@ -34,73 +37,112 @@ class PlayerQualityPreferenceTest {
     }
 
     @Test
-    fun `full HD screen falls back to highest available episode quality`() {
-        val preferred = screenPlayerQuality(1920, 1080)
-        assertEquals(PlayerQuality.FULLHD, QualityInfo("sd", "hd", "fhd").getActualFor(preferred))
-        assertEquals(PlayerQuality.HD, QualityInfo("sd", "hd", null).getActualFor(preferred))
-        assertEquals(PlayerQuality.SD, QualityInfo("sd", null, null).getActualFor(preferred))
+    fun `auto selects highest available episode quality below screen limit`() {
+        assertEquals(PlayerQuality.FULLHD, resolvePlayerQuality(null, allQualities, PlayerQuality.FULLHD))
+        assertEquals(PlayerQuality.HD, resolvePlayerQuality(null, QualityInfo("sd", "hd", null), PlayerQuality.FULLHD))
+        assertEquals(PlayerQuality.HD, resolvePlayerQuality(null, allQualities, PlayerQuality.HD))
+        assertEquals(PlayerQuality.SD, resolvePlayerQuality(null, QualityInfo("sd", null, "fhd"), PlayerQuality.HD))
+        assertNull(resolvePlayerQuality(null, QualityInfo(null, null, null), PlayerQuality.FULLHD))
     }
 
     @Test
-    fun `HD screen does not select available full HD stream`() {
-        val preferred = screenPlayerQuality(1280, 720)
-        assertEquals(PlayerQuality.HD, QualityInfo("sd", "hd", "fhd").getActualFor(preferred))
-        assertEquals(PlayerQuality.SD, QualityInfo("sd", null, "fhd").getActualFor(preferred))
+    fun `manual quality is used when present and unavailable manual quality uses auto`() {
+        assertEquals(PlayerQuality.SD, resolvePlayerQuality(PlayerQuality.SD, allQualities, PlayerQuality.FULLHD))
+        assertEquals(PlayerQuality.FULLHD, resolvePlayerQuality(PlayerQuality.HD, QualityInfo("sd", null, "fhd"), PlayerQuality.FULLHD))
+        assertEquals(PlayerQuality.HD, resolvePlayerQuality(PlayerQuality.FULLHD, QualityInfo("sd", "hd", null), PlayerQuality.FULLHD))
     }
 
     @Test
-    fun `automatic default does not replace an existing manual choice`() {
+    fun `all releases default to auto despite legacy global quality`() {
         val fixture = PreferenceFixture()
-        val automatic = fixture.preference.withDefault(PlayerQuality.FULLHD)
-        assertEquals(PlayerQuality.FULLHD, automatic.value)
-        assertEquals(PlayerQuality.SD, fixture.preference.value)
+        fixture.stored["player_quality"] = "sd"
+        val preferences = ReleaseQualityPreferences(fixture.preferences)
+        assertNull(preferences.forRelease(ReleaseId(1)).value)
+        assertNull(preferences.forRelease(ReleaseId(2)).value)
+    }
 
-        fixture.save(PlayerQuality.SD)
-        assertEquals(PlayerQuality.SD, automatic.value)
-        assertEquals(PlayerQuality.SD, fixture.preference.withDefault(PlayerQuality.HD).value)
+    @Test
+    fun `manual choice persists for one release and auto removes only that choice`() {
+        val fixture = PreferenceFixture()
+        val preferences = ReleaseQualityPreferences(fixture.preferences)
+        preferences.forRelease(ReleaseId(1)).value = PlayerQuality.HD
+        assertNull(preferences.forRelease(ReleaseId(2)).value)
+        preferences.forRelease(ReleaseId(2)).value = PlayerQuality.SD
+
+        val reopened = ReleaseQualityPreferences(fixture.preferences)
+        assertEquals(PlayerQuality.HD, reopened.forRelease(ReleaseId(1)).value)
+        assertEquals(PlayerQuality.SD, reopened.forRelease(ReleaseId(2)).value)
+        reopened.forRelease(ReleaseId(1)).value = null
+        assertNull(preferences.forRelease(ReleaseId(1)).value)
+        assertEquals(PlayerQuality.SD, preferences.forRelease(ReleaseId(2)).value)
+    }
+
+    @Test
+    fun `automatic fallback for one episode preserves the releases manual choice`() {
+        val fixture = PreferenceFixture()
+        val preferences = ReleaseQualityPreferences(fixture.preferences)
+        val selection = preferences.forRelease(ReleaseId(1))
+        selection.value = PlayerQuality.HD
+        assertEquals(PlayerQuality.FULLHD, resolvePlayerQuality(selection.value, QualityInfo("sd", null, "fhd"), PlayerQuality.FULLHD))
+        assertEquals(PlayerQuality.HD, selection.value)
+        assertEquals(PlayerQuality.HD, resolvePlayerQuality(selection.value, allQualities, PlayerQuality.FULLHD))
     }
 
     @Test(timeout = 5000)
-    fun `manual SD emits a change even when underlying default was SD`() = runBlocking {
+    fun `switching between auto and manual SD notifies player observers`() = runBlocking {
         val fixture = PreferenceFixture()
-        val automatic = fixture.preference.withDefault(PlayerQuality.FULLHD)
-        val values = mutableListOf<PlayerQuality>()
+        val selection = ReleaseQualityPreferences(fixture.preferences).forRelease(ReleaseId(1))
+        val values = mutableListOf<PlayerQuality?>()
         val job = launch(start = CoroutineStart.UNDISPATCHED) {
-            automatic.take(2).toList(values)
+            selection.take(3).toList(values)
         }
-        fixture.save(PlayerQuality.SD)
+        selection.value = PlayerQuality.SD
+        yield()
+        selection.value = null
         job.join()
-        assertEquals(listOf(PlayerQuality.FULLHD, PlayerQuality.SD), values)
+        assertEquals(listOf(null, PlayerQuality.SD, null), values)
     }
 
     private class PreferenceFixture {
-        private var stored: String? = null
+        val stored = mutableMapOf<String, String>()
         private val listeners = mutableListOf<SharedPreferences.OnSharedPreferenceChangeListener>()
-        private val preferences = Proxy.newProxyInstance(
-            SharedPreferences::class.java.classLoader,
-            arrayOf(SharedPreferences::class.java),
-        ) { _, method, args ->
-            when (method.name) {
-                "contains" -> stored != null
-                "getString" -> stored ?: args!![1]
+        val preferences: SharedPreferences = proxy(SharedPreferences::class.java) { name, args ->
+            when (name) {
+                "getString" -> stored[args!![0]] ?: args[1]
                 "registerOnSharedPreferenceChangeListener" -> {
                     listeners.add(args!![0] as SharedPreferences.OnSharedPreferenceChangeListener)
                     null
                 }
-                else -> error("Unexpected SharedPreferences call: ${method.name}")
+                "edit" -> editor()
+                else -> error("Unexpected SharedPreferences call: $name")
             }
-        } as SharedPreferences
-
-        val preference = AppPreference(
-            key = "quality",
-            sharedPreferences = preferences,
-            get = { key -> PlayerQuality.valueOf(getString(key, "SD")!!) },
-            set = { key, value -> putString(key, value.name) },
-        )
-
-        fun save(quality: PlayerQuality) {
-            stored = quality.name
-            listeners.forEach { it.onSharedPreferenceChanged(preferences, "quality") }
         }
+
+        private fun editor(): SharedPreferences.Editor {
+            val changes = mutableMapOf<String, String?>()
+            lateinit var editor: SharedPreferences.Editor
+            editor = proxy(SharedPreferences.Editor::class.java) { name, args ->
+                when (name) {
+                    "putString", "remove" -> {
+                        changes[args!![0] as String] = if (name == "remove") null else args[1] as String?
+                        editor
+                    }
+                    "apply" -> {
+                        changes.forEach { (key, value) ->
+                            if (value == null) stored.remove(key) else stored[key] = value
+                            listeners.forEach { it.onSharedPreferenceChanged(preferences, key) }
+                        }
+                        null
+                    }
+                    else -> error("Unexpected Editor call: $name")
+                }
+            }
+            return editor
+        }
+
+        private fun <T> proxy(type: Class<T>, handler: (String, Array<out Any?>?) -> Any?): T =
+            requireNotNull(type.cast(Proxy.newProxyInstance(type.classLoader, arrayOf(type)) { _, method, args ->
+                handler(method.name, args)
+            }))
     }
 }
