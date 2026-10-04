@@ -86,6 +86,8 @@ class VideoPlayerGlue(
 
     init {
         isSeekEnabled = true
+        // Автоскрытием управляем в onPlayStateChanged с учётом кнопок пропуска.
+        isControlsOverlayAutoHideEnabled = false
     }
 
     override fun onCreatePrimaryActions(adapter: ArrayObjectAdapter) {
