@@ -179,7 +179,7 @@
             android:layout_height="wrap_content"
             android:alpha="0.8"
             android:lineSpacingMultiplier="1.33"
-            android:paddingEnd="8dp"
+            android:paddingEnd="4dp"
             android:textColor="@color/dark_textDefault"
             android:textSize="14sp"
             tools:text="@tools:sample/lorem/random" />
