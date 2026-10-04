@@ -78,6 +78,8 @@ class LibriaReleaseViewHolder(
         binding.rowReleaseActionOther.setOnClickListener { otherClickListener.invoke() }
         binding.rowReleaseActionFavorite.setOnClickListener { favoriteClickListener.invoke() }
         binding.rowReleaseDescriptionCard.setOnClickListener { descriptionClickListener.invoke() }
+        // Запускаем бегущую строку без передачи ей фокуса пульта.
+        binding.rowReleaseExtra.isSelected = true
         binding.root.updateLayoutParams {
             height =
                 binding.root.resources.displayMetrics.heightPixels - 1 // Шобы следующая строка подгрузилась при открытии
