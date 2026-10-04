@@ -14,7 +14,8 @@ new fixes or features.
   Preserve these changes in subsequent device builds.
 - `fix/tv-controls-and-description` merges original PR #276 into current
   `upstream/develop`, then fixes controls auto-hide, skip timer lifecycle,
-  description scrolling and complete release metadata display. It addresses
+  description scrolling and single-line marquee for overflowing release
+  metadata (short metadata stays static). It addresses
   issues #39 and #96. A replacement upstream PR has not been created yet;
   the user asked to finish investigating text clipping before publication.
 - `fix/tv-otp-auth` contains only the authentication fix and regression
