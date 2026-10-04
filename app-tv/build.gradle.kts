@@ -23,6 +23,8 @@ val hasReleaseSigningConfig = releaseSigningProperties.all {
     !localProperties.getProperty(it).isNullOrBlank()
 }
 
+val searchSuggestionsAuthority = "ru.radiationx.anilibria.contentprovider.suggestions"
+
 android {
     namespace = "ru.radiationx.anilibria"
 
@@ -35,10 +37,18 @@ android {
         versionCode = libs.versions.tv.version.code.get().toInt()
         versionName = libs.versions.tv.version.name.get()
         buildConfigField("String", "BUILD_DATE", "\"${getDateTime()}\"")
+        manifestPlaceholders["searchSuggestionsAuthority"] = searchSuggestionsAuthority
+        resValue("string", "search_suggestions_authority", searchSuggestionsAuthority)
+        resValue(
+            "string",
+            "search_suggestions_intent_data",
+            "content://$searchSuggestionsAuthority/video"
+        )
     }
 
     buildFeatures {
         viewBinding = true
+        resValues = true
         buildConfig = true
     }
 
@@ -54,6 +64,19 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            val debugAuthority = "$searchSuggestionsAuthority.debug"
+            manifestPlaceholders["searchSuggestionsAuthority"] = debugAuthority
+            resValue("string", "search_suggestions_authority", debugAuthority)
+            resValue(
+                "string",
+                "search_suggestions_intent_data",
+                "content://$debugAuthority/video"
+            )
+        }
+
         release {
             signingConfigs.findByName("release")?.let { signingConfig = it }
             isMinifyEnabled = false

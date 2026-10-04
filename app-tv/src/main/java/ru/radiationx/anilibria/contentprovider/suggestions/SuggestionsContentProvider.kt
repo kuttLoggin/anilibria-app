@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import ru.radiationx.anilibria.App
+import ru.radiationx.anilibria.R
 import ru.radiationx.anilibria.contentprovider.SystemSuggestionEntity
 import ru.radiationx.data.entity.domain.search.SuggestionItem
 import ru.radiationx.data.repository.SearchRepository
@@ -26,8 +27,11 @@ class SuggestionsContentProvider : ContentProvider() {
             SearchManager.SUGGEST_COLUMN_INTENT_ACTION,
             SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID
         )
-        private const val AUTHORITY = "ru.radiationx.anilibria.contentprovider.suggestions"
         private const val SEARCH_SUGGEST = 1
+    }
+
+    private val authority by lazy {
+        requireNotNull(context).getString(R.string.search_suggestions_authority)
     }
 
     private val uriMatcher by lazy { buildUriMatcher() }
@@ -97,12 +101,12 @@ class SuggestionsContentProvider : ContentProvider() {
 
     private fun buildUriMatcher(): UriMatcher = UriMatcher(UriMatcher.NO_MATCH).apply {
         addURI(
-            AUTHORITY,
+            authority,
             "/search/${SearchManager.SUGGEST_URI_PATH_QUERY}",
             SEARCH_SUGGEST
         )
         addURI(
-            AUTHORITY,
+            authority,
             "/search/${SearchManager.SUGGEST_URI_PATH_QUERY}/*",
             SEARCH_SUGGEST
         )
