@@ -2,8 +2,6 @@ package ru.radiationx.anilibria.screen.player.quality
 
 import android.os.Bundle
 import android.view.View
-import androidx.core.text.bold
-import androidx.core.text.buildSpannedString
 import androidx.leanback.widget.GuidedAction
 import kotlinx.coroutines.flow.filterNotNull
 import ru.radiationx.anilibria.R
@@ -21,6 +19,7 @@ class PlayerQualityGuidedFragment : BasePlayerGuidedFragment() {
         GuidedAction.Builder(requireContext())
             .id(PlayerQualityViewModel.AUTO_ACTION_ID)
             .title(autoTitle(null))
+            .icon(requireContext().getCompatDrawable(R.drawable.ic_quality_auto_base))
             .build()
     }
 
@@ -83,13 +82,10 @@ class PlayerQualityGuidedFragment : BasePlayerGuidedFragment() {
         else -> null
     }
 
-    private fun autoTitle(quality: PlayerQuality?) = buildSpannedString {
-        bold { append("Авто") }
-        when (quality) {
-            PlayerQuality.SD -> append(" · 480p")
-            PlayerQuality.HD -> append(" · 720p")
-            PlayerQuality.FULLHD -> append(" · 1080p")
-            null -> Unit
-        }
+    private fun autoTitle(quality: PlayerQuality?): String = when (quality) {
+        PlayerQuality.SD -> "480p"
+        PlayerQuality.HD -> "720p"
+        PlayerQuality.FULLHD -> "1080p"
+        null -> "Авто"
     }
 }
