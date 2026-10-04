@@ -9,8 +9,14 @@ new fixes or features.
   debug app beside the official app. Continue local development and device
   testing with these changes present.
 - It also integrates upstream PR #276 (player overlay and scrollable release
-  descriptions), with local compatibility corrections. Preserve these changes
-  in subsequent device builds.
+  descriptions). The previous rollback was undone at the user's request;
+  original PR commits and subsequent layout/player corrections are preserved.
+  Preserve these changes in subsequent device builds.
+- `fix/tv-controls-and-description` merges original PR #276 into current
+  `upstream/develop`, then fixes controls auto-hide, skip timer lifecycle,
+  description scrolling and complete release metadata display. It addresses
+  issues #39 and #96. A replacement upstream PR has not been created yet;
+  the user asked to finish investigating text clipping before publication.
 - `fix/tv-otp-auth` contains only the authentication fix and regression
   tests. Its upstream PR is https://github.com/anilibria/anilibria-app/pull/304
   (replacing closed PR #303 after renaming the source branch),

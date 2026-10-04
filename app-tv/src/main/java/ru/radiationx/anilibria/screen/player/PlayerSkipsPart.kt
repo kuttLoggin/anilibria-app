@@ -65,9 +65,17 @@ class PlayerSkipsPart(
             onUserChoseSkipOpening()
         }
         binding.root.isVisible = false
+        observeSkipTimerState()
     }
 
     fun setSkips(skips: PlayerSkips?) {
+        stopTimer()
+        binding.root.isVisible = false
+        if (isSkipVisible) {
+            isSkipVisible = false
+            onSkipHide.invoke()
+        }
+        currentPosition = 0L
         playerSkips = skips
         skippedList.clear()
     }
@@ -81,29 +89,18 @@ class PlayerSkipsPart(
         val skip = getCurrentSkip()
         val hasSkip = skip != null
 
-        // Если раньше skip отображался, а сейчас нет - значит перепрыгнули
-        if (skip == null && isSkipVisible) {
-            isSkipVisible = false
-            stopTimer()
-            onSkipHide.invoke()
-            binding.root.isVisible = false
-        }
-
-        // Если skip есть и кнопки не в фокусе — фокусируем по умолчанию на "Пропустить"
-        if (hasSkip && (!binding.btSkipsSkip.isFocused && !binding.btSkipsCancel.isFocused)) {
-            binding.btSkipsSkip.requestFocus()
-        }
-
         if (hasSkip == isSkipVisible) return
 
         isSkipVisible = hasSkip
+        binding.root.isVisible = hasSkip
         if (hasSkip) {
             onSkipShow.invoke()
+            binding.btSkipsSkip.requestFocus()
             startTimerIfNeed()
         } else {
+            stopTimer()
             onSkipHide.invoke()
         }
-        binding.root.isVisible = hasSkip
     }
 
     private fun getCurrentSkip(): PlayerSkips.Skip? {
@@ -131,6 +128,7 @@ class PlayerSkipsPart(
 
     private fun cancelSkip() {
         getCurrentSkip()?.also { skippedList.add(it) }
+        update(currentPosition)
     }
 
     private suspend fun isAutoSkipEnabled(): Boolean = withContext(Dispatchers.IO) {
@@ -160,17 +158,9 @@ class PlayerSkipsPart(
     }
 
     private fun startTimerIfNeed() {
-        coroutineScope.launch {
-            if (isAutoSkipEnabled()) {
-                observeSkipTimerState()
-                startTimer()
-            }
-        }
-    }
-
-    private fun startTimer() {
         stopTimer()
         timerJob = coroutineScope.launch {
+            if (!isAutoSkipEnabled()) return@launch
             repeat(TIMER_SEC) { sec ->
                 _timerFlow.emit(TIMER_SEC - sec)
                 delay(1000)

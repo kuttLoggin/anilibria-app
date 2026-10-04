@@ -19,7 +19,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
-import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.ExoPlayer
@@ -49,32 +48,20 @@ open class BasePlayerFragment : VideoSupportFragment() {
         super.onViewCreated(view, savedInstanceState)
         view.setBackgroundColor(Color.BLACK)
 
-        // 1) Разрешаем Leanback’у автоматически скрывать панель при воспроизведении
         isControlsOverlayAutoHideEnabled = true
-        // 2) Разрешаем ручное сворачивание (и любые другие события пользователя)
         isShowOrHideControlsOverlayOnUserInteraction = true
 
-        // Устанавливаем перехватчик клавиш. Он вызовется ПЕРЕД стандартной обработкой Leanback.
-        // Если мы вернём true, событие не пойдёт дальше, и leanback-навигация по кнопкам не сработает.
-        // Поэтому "глотаем" только Play/Pause, а всё остальное возвращаем false.
         setOnKeyInterceptListener { _, keyCode, event ->
-            if (event.action == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) {
-                Log.d("BasePlayerFragment", "KEYCODE_MEDIA_PLAY_PAUSE pressed")
-
-                // Переключаем плеер вручную:
-                if (playerGlue?.isPlaying == true) {
-                    playerGlue?.pause()
-                } else {
-                    playerGlue?.play()
+            if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) {
+                if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                    if (playerGlue?.isPlaying == true) {
+                        playerGlue?.pause()
+                    } else {
+                        playerGlue?.play()
+                    }
                 }
-
-                // Показываем оверлей (с его автоскрытием).
-                showControlsOverlay(false)
-
-                // Возвращаем true → событие "съедено" этим перехватчиком.
                 true
             } else {
-                // Для остальных кнопок даём Leanback делать своё дело
                 false
             }
         }
@@ -83,7 +70,6 @@ open class BasePlayerFragment : VideoSupportFragment() {
         initializePlayer()
         initializeRows()
 
-        // Подключаем skip-логику
         skipsPart = PlayerSkipsPart(
             parent = view as FrameLayout,
             skipButtonText = getString(R.string.player_skip),
@@ -91,32 +77,34 @@ open class BasePlayerFragment : VideoSupportFragment() {
             playerSkipsTimer = get<PreferencesHolder>().playerSkipsTimer,
             onSeek = { position -> player?.seekTo(position) },
             onSkipShow = {
-                // Пока skip показан, запрещаем автоскрытие
                 isShowOrHideControlsOverlayOnUserInteraction = false
+                isControlsOverlayAutoHideEnabled = false
                 hideControlsOverlay(false)
             },
             onSkipHide = {
-                // Когда skip убрали, снова включаем автоскрытие
                 isShowOrHideControlsOverlayOnUserInteraction = true
+                isControlsOverlayAutoHideEnabled = playerGlue?.isPlaying == true
+                if (playerGlue?.isPlaying == true) {
+                    hideControlsOverlay(false)
+                } else {
+                    showControlsOverlay(false)
+                }
             }
         )
 
-        // По ходу воспроизведения обновляем skip
         playerGlue?.playbackListener = object : VideoPlayerGlue.PlaybackListener {
             override fun onUpdateProgress() {
                 skipsPart?.update(player?.currentPosition ?: 0)
             }
         }
 
-        // "Хак" для случаев, когда при нажатии "ОК" оверлей не прятался
-        fadeCompleteListener = object : OnFadeCompleteListener() {
-            override fun onFadeInComplete() {
-                super.onFadeInComplete()
-                // Перезапускаем флаг автоскрытия (иногда помогает, если есть глюки)
-                isControlsOverlayAutoHideEnabled = false
-                isControlsOverlayAutoHideEnabled = true
-            }
+    }
+
+    override fun onVideoSizeChanged(videoWidth: Int, videoHeight: Int) {
+        if (videoWidth == 0 || videoHeight == 0) {
+            return
         }
+        super.onVideoSizeChanged(videoWidth, videoHeight)
     }
 
     override fun onPause() {
