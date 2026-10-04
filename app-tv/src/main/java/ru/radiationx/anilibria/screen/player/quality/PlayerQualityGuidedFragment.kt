@@ -2,6 +2,8 @@ package ru.radiationx.anilibria.screen.player.quality
 
 import android.os.Bundle
 import android.view.View
+import androidx.core.text.bold
+import androidx.core.text.buildSpannedString
 import androidx.leanback.widget.GuidedAction
 import kotlinx.coroutines.flow.filterNotNull
 import ru.radiationx.anilibria.R
@@ -18,7 +20,7 @@ class PlayerQualityGuidedFragment : BasePlayerGuidedFragment() {
     private val autoAction by lazy {
         GuidedAction.Builder(requireContext())
             .id(PlayerQualityViewModel.AUTO_ACTION_ID)
-            .title("Авто")
+            .title(autoTitle(null))
             .build()
     }
 
@@ -54,12 +56,7 @@ class PlayerQualityGuidedFragment : BasePlayerGuidedFragment() {
         viewLifecycleOwner.lifecycle.addObserver(viewModel)
 
         subscribeTo(viewModel.automaticQualityData) { quality ->
-            autoAction.title = when (quality) {
-                PlayerQuality.SD -> "Авто · 480p"
-                PlayerQuality.HD -> "Авто · 720p"
-                PlayerQuality.FULLHD -> "Авто · 1080p"
-                null -> "Авто"
-            }
+            autoAction.title = autoTitle(quality)
             findActionPositionById(PlayerQualityViewModel.AUTO_ACTION_ID)
                 .takeIf { it >= 0 }
                 ?.also { notifyActionChanged(it) }
@@ -84,5 +81,15 @@ class PlayerQualityGuidedFragment : BasePlayerGuidedFragment() {
         PlayerQualityViewModel.HD_ACTION_ID -> hdAction
         PlayerQualityViewModel.FULL_HD_ACTION_ID -> fullHdAction
         else -> null
+    }
+
+    private fun autoTitle(quality: PlayerQuality?) = buildSpannedString {
+        bold { append("Авто") }
+        when (quality) {
+            PlayerQuality.SD -> append(" · 480p")
+            PlayerQuality.HD -> append(" · 720p")
+            PlayerQuality.FULLHD -> append(" · 1080p")
+            null -> Unit
+        }
     }
 }
