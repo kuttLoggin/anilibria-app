@@ -43,7 +43,7 @@ open class BasePlayerFragment : VideoSupportFragment() {
         private set
 
     private var isPlayPausePressed = false
-    private var isOverlayDismissUpPressed = false
+    private var upNavigationFocus: View? = null
 
     @SuppressLint("RestrictedApi")
     @OptIn(UnstableApi::class)
@@ -80,17 +80,21 @@ open class BasePlayerFragment : VideoSupportFragment() {
                     KeyEvent.ACTION_DOWN -> {
                         if (event.repeatCount == 0) {
                             val focusedView = view.findFocus()
-                            val nextFocus = focusedView?.focusSearch(View.FOCUS_UP)
-                            isOverlayDismissUpPressed = isControlsOverlayVisible &&
-                                isShowOrHideControlsOverlayOnUserInteraction &&
-                                focusedView != null &&
-                                (nextFocus == null || nextFocus.hasFocus())
+                            upNavigationFocus = focusedView?.takeIf {
+                                isControlsOverlayVisible &&
+                                    isShowOrHideControlsOverlayOnUserInteraction &&
+                                    // Up is intentionally consumed while the seek bar is seeking.
+                                    it.id != androidx.leanback.R.id.playback_progress
+                            }
                         }
-                        isOverlayDismissUpPressed
+                        false
                     }
                     KeyEvent.ACTION_UP -> {
-                        if (isOverlayDismissUpPressed) {
-                            isOverlayDismissUpPressed = false
+                        val previousFocus = upNavigationFocus
+                        upNavigationFocus = null
+                        if (previousFocus != null && previousFocus === view.findFocus() &&
+                            isControlsOverlayVisible && isShowOrHideControlsOverlayOnUserInteraction
+                        ) {
                             // Leanback shows the overlay on key-down events, so hide on release.
                             hideControlsOverlay(true)
                             true
@@ -144,7 +148,7 @@ open class BasePlayerFragment : VideoSupportFragment() {
 
     override fun onPause() {
         isPlayPausePressed = false
-        isOverlayDismissUpPressed = false
+        upNavigationFocus = null
         super.onPause()
         playerGlue?.pause()
     }
@@ -152,6 +156,7 @@ open class BasePlayerFragment : VideoSupportFragment() {
     @OptIn(UnstableApi::class)
     override fun onDestroyView() {
         super.onDestroyView()
+        upNavigationFocus = null
         skipsPart = null
         playerGlue?.playbackListener = null
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
