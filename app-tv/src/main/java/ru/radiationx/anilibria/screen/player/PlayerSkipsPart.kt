@@ -25,7 +25,7 @@ import ru.radiationx.data.entity.domain.release.PlayerSkips
  * @property playerSkipsTimer включен ли таймер для автопропуска опенинга
  * @property onSeek функция для отлова намерения перемотки
  * @property onSkipShow функция для отлова события показа кнопки пропуска
- * @property onSkipHide функция для отлова события скрытия кнопки пропуска
+ * @property onSkipHide функция для отлава события скрытия кнопки пропуска
  */
 class PlayerSkipsPart(
     private val parent: FrameLayout,
@@ -52,7 +52,7 @@ class PlayerSkipsPart(
     private var playerSkips: PlayerSkips? = null
     private val skippedList = mutableSetOf<PlayerSkips.Skip>()
     private var currentPosition = 0L
-    private var isSkipVisible = false
+    private var currentSkipShow = false
     private var timerJob: Job? = null
 
     init {
@@ -72,34 +72,23 @@ class PlayerSkipsPart(
         skippedList.clear()
     }
 
-    /**
-     * Вызывается периодически (например, playerGlue?.playbackListener?.onUpdateProgress())
-     */
     fun update(position: Long) {
         currentPosition = position
         autoCancel()
         val skip = getCurrentSkip()
         val hasSkip = skip != null
-
-        // Если раньше skip отображался, а сейчас нет - значит перепрыгнули
-        if (skip == null && isSkipVisible) {
-            isSkipVisible = false
-            stopTimer()
-            onSkipHide.invoke()
-            binding.root.isVisible = false
+        binding.apply {
+            if (hasSkip && (!btSkipsSkip.isFocused && !btSkipsCancel.isFocused)) {
+                btSkipsSkip.requestFocus()
+                startTimerIfNeed()
+            }
         }
-
-        // Если skip есть и кнопки не в фокусе — фокусируем по умолчанию на "Пропустить"
-        if (hasSkip && (!binding.btSkipsSkip.isFocused && !binding.btSkipsCancel.isFocused)) {
-            binding.btSkipsSkip.requestFocus()
+        if (hasSkip == currentSkipShow) {
+            return
         }
-
-        if (hasSkip == isSkipVisible) return
-
-        isSkipVisible = hasSkip
+        currentSkipShow = hasSkip
         if (hasSkip) {
             onSkipShow.invoke()
-            startTimerIfNeed()
         } else {
             onSkipHide.invoke()
         }
@@ -107,14 +96,12 @@ class PlayerSkipsPart(
     }
 
     private fun getCurrentSkip(): PlayerSkips.Skip? {
-        return playerSkips?.opening?.takeIf(::checkSkip)
-            ?: playerSkips?.ending?.takeIf(::checkSkip)
+        return playerSkips?.opening?.takeIf { checkSkip(it) }
+            ?: playerSkips?.ending?.takeIf { checkSkip(it) }
     }
 
     private fun checkSkip(skip: PlayerSkips.Skip): Boolean {
-        return !skippedList.contains(skip) &&
-               currentPosition >= skip.start &&
-               currentPosition <= skip.end
+        return !skippedList.contains(skip) && currentPosition >= skip.start && currentPosition <= skip.end
     }
 
     private fun autoCancel() {
@@ -124,6 +111,7 @@ class PlayerSkipsPart(
         if (opening != null && opening !in skippedList && opening.end < currentPosition) {
             skippedList.add(opening)
         }
+
         if (ending != null && ending !in skippedList && ending.end < currentPosition) {
             skippedList.add(ending)
         }
@@ -146,17 +134,22 @@ class PlayerSkipsPart(
     }
 
     private fun skip() {
-        getCurrentSkip()?.also { onSeek(it.end) }
+        getCurrentSkip()?.also {
+            onSeek(it.end)
+        }
         cancelSkip()
     }
 
     private fun observeSkipTimerState() {
         _timerFlow
             .onEach { remainingTimeSec ->
-                val text = remainingTimeSec?.let { "$skipButtonText ($it)" } ?: skipButtonText
+                val text = if (remainingTimeSec != null) {
+                    "$skipButtonText ($remainingTimeSec)"
+                } else {
+                    skipButtonText
+                }
                 binding.btSkipsSkip.text = text
-            }
-            .launchIn(coroutineScope)
+            }.launchIn(coroutineScope)
     }
 
     private fun startTimerIfNeed() {

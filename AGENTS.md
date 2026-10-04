@@ -8,9 +8,10 @@ new fixes or features.
   OTP authentication fix and the TV debug setup, which allows installing the
   debug app beside the official app. Continue local development and device
   testing with these changes present.
-- It also integrates upstream PR #276 (player overlay and scrollable release
-  descriptions), with local compatibility corrections. Preserve these changes
-  in subsequent device builds.
+- Upstream PR #276 was merged and then reverted at the user's request because
+  of problems observed during use. Its player overlay and scrollable release
+  description changes are deferred; do not reintroduce them without a new
+  user request.
 - `fix/tv-otp-auth` contains only the authentication fix and regression
   tests. Its upstream PR is https://github.com/anilibria/anilibria-app/pull/304
   (replacing closed PR #303 after renaming the source branch),
