@@ -28,6 +28,10 @@ new fixes or features.
   with "Suzume" and verified on the user's TV. Its upstream PR is
   https://github.com/anilibria/anilibria-app/pull/305. This fix is also included
   in `tv-development`.
+- `fix/tv-default-quality` selects the initial TV playback quality from the
+  physical display resolution when no manual quality has been saved. Manual
+  choices persist across viewings. It is included in `tv-development`; no
+  upstream PR has been created yet.
 - Write PR descriptions in Russian. State concrete reproduction examples and
   disclose OpenAI Codex assistance when preparing PRs for this project.
 - Keep each upstream PR limited to one fix or feature. Do not include the local
