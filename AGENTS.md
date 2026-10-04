@@ -16,8 +16,10 @@ new fixes or features.
   `upstream/develop`, then fixes controls auto-hide, skip timer lifecycle,
   description scrolling and single-line marquee for overflowing release
   metadata (short metadata stays static). It addresses
-  issues #39 and #96. A replacement upstream PR has not been created yet;
-  the user asked to finish investigating text clipping before publication.
+  issues #39 and #96. Its upstream PR is
+  https://github.com/anilibria/anilibria-app/pull/306, targeting `develop`.
+  It also reserves space for description scrollbars and moves focus down
+  to the first visible action after reaching the end of the description.
 - `fix/tv-otp-auth` contains only the authentication fix and regression
   tests. Its upstream PR is https://github.com/anilibria/anilibria-app/pull/304
   (replacing closed PR #303 after renaming the source branch),
