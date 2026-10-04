@@ -77,7 +77,7 @@ open class BasePlayerFragment : VideoSupportFragment() {
                             isOverlayDismissUpPressed = isControlsOverlayVisible &&
                                 isShowOrHideControlsOverlayOnUserInteraction &&
                                 focusedView != null &&
-                                (nextFocus == null || nextFocus === focusedView)
+                                (nextFocus == null || nextFocus.hasFocus())
                         }
                         isOverlayDismissUpPressed
                     }
