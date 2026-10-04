@@ -37,6 +37,11 @@ new fixes or features.
   Auto temporarily; selecting Auto clears the release's manual preference.
   It is included in `tv-development`. Its upstream PR is
   https://github.com/anilibria/anilibria-app/pull/307, targeting `develop`.
+- `fix/tv-release-blocked-message` shows the API block reason on TV release
+  cards when `blockedInfo.blocked` is true, with a generic fallback if the
+  reason is missing. Verified on "Oshi no Ko 3rd Season" and included in
+  `tv-development`. Its upstream PR is
+  https://github.com/anilibria/anilibria-app/pull/308, targeting `develop`.
 - Write PR descriptions in Russian. State concrete reproduction examples and
   disclose OpenAI Codex assistance when preparing PRs for this project.
 - Keep each upstream PR limited to one fix or feature. Do not include the local
