@@ -164,7 +164,6 @@
         android:clickable="false"
         android:focusable="true"
         android:focusableInTouchMode="false"
-        android:nextFocusDown="@id/rowReleaseActions"
         android:padding="8dp"
         android:scrollbarStyle="insideInset"
         android:scrollbars="vertical"
