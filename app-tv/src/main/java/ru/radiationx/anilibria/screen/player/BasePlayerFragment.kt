@@ -43,6 +43,7 @@ open class BasePlayerFragment : VideoSupportFragment() {
         private set
 
     private var isPlayPausePressed = false
+    private var isOverlayDismissUpPressed = false
 
     @SuppressLint("RestrictedApi")
     @OptIn(UnstableApi::class)
@@ -69,6 +70,31 @@ open class BasePlayerFragment : VideoSupportFragment() {
                     KeyEvent.ACTION_UP -> isPlayPausePressed = false
                 }
                 true
+            } else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+                when (event.action) {
+                    KeyEvent.ACTION_DOWN -> {
+                        if (event.repeatCount == 0) {
+                            val focusedView = view.findFocus()
+                            val nextFocus = focusedView?.focusSearch(View.FOCUS_UP)
+                            isOverlayDismissUpPressed = isControlsOverlayVisible &&
+                                isShowOrHideControlsOverlayOnUserInteraction &&
+                                focusedView != null &&
+                                (nextFocus == null || nextFocus === focusedView)
+                        }
+                        isOverlayDismissUpPressed
+                    }
+                    KeyEvent.ACTION_UP -> {
+                        if (isOverlayDismissUpPressed) {
+                            isOverlayDismissUpPressed = false
+                            // Leanback shows the overlay on key-down events, so hide on release.
+                            hideControlsOverlay(true)
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                    else -> false
+                }
             } else {
                 false
             }
@@ -117,6 +143,7 @@ open class BasePlayerFragment : VideoSupportFragment() {
 
     override fun onPause() {
         isPlayPausePressed = false
+        isOverlayDismissUpPressed = false
         super.onPause()
         playerGlue?.pause()
     }
