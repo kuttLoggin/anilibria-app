@@ -151,11 +151,13 @@ class LibriaReleaseViewHolder(
             "Добавить в избранное"
         }
 
-        if (details.hasViewed) {
-            binding.rowReleaseActionContinue.requestFocus()
-        } else {
-            binding.rowReleaseActionPlay.requestFocus()
+        val firstAction = when {
+            details.hasViewed -> binding.rowReleaseActionContinue
+            details.hasEpisodes -> binding.rowReleaseActionPlay
+            else -> binding.rowReleaseActionFavorite
         }
+        binding.rowReleaseDescriptionCard.nextFocusDownId = firstAction.id
+        firstAction.requestFocus()
 
         binding.rowReleaseImageCard.showImageUrl(details.image)
     }
