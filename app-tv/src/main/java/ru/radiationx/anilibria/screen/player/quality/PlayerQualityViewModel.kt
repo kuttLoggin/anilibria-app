@@ -20,6 +20,7 @@ class PlayerQualityViewModel @Inject constructor(
 ) : LifecycleViewModel() {
 
     companion object {
+        const val AUTO_ACTION_ID = -1L
         val SD_ACTION_ID = PlayerQuality.SD.ordinal.toLong()
         val HD_ACTION_ID = PlayerQuality.HD.ordinal.toLong()
         val FULL_HD_ACTION_ID = PlayerQuality.FULLHD.ordinal.toLong()
@@ -27,11 +28,14 @@ class PlayerQualityViewModel @Inject constructor(
 
     val availableData = MutableStateFlow<List<Long>>(emptyList())
     val selectedData = MutableStateFlow<Long?>(null)
+    val automaticQualityData = MutableStateFlow<PlayerQuality?>(null)
+
+    private val releaseQuality = qualityPreference.forRelease(argExtra.releaseId)
 
     init {
         combine(
             releaseInteractor.observeFull(argExtra.releaseId),
-            qualityPreference.quality
+            releaseQuality
         ) { release, quality ->
             updateAvailable(release, quality)
         }.launchIn(viewModelScope)
@@ -40,18 +44,24 @@ class PlayerQualityViewModel @Inject constructor(
     fun applyQuality(quality: Long) {
         guidedRouter.close()
         val value = when (quality) {
+            AUTO_ACTION_ID -> null
             SD_ACTION_ID -> PlayerQuality.SD
             HD_ACTION_ID -> PlayerQuality.HD
             FULL_HD_ACTION_ID -> PlayerQuality.FULLHD
-            else -> PlayerQuality.SD
+            else -> return
         }
-        qualityPreference.quality.value = value
+        releaseQuality.value = value
     }
 
-    private fun updateAvailable(release: Release, quality: PlayerQuality) {
+    private fun updateAvailable(release: Release, quality: PlayerQuality?) {
         val episode = release.episodes.firstOrNull { it.id == argExtra.episodeId } ?: return
-        availableData.value = episode.qualityInfo.available.map { it.ordinal.toLong() }
-        selectedData.value = episode.qualityInfo.getActualFor(quality)?.ordinal?.toLong() ?: -1L
+        automaticQualityData.value = qualityPreference.automaticQuality(episode.qualityInfo)
+        availableData.value = listOf(AUTO_ACTION_ID) + episode.qualityInfo.available.map { it.ordinal.toLong() }
+        selectedData.value = if (quality != null && quality in episode.qualityInfo.available) {
+            quality.ordinal.toLong()
+        } else {
+            AUTO_ACTION_ID
+        }
     }
 
 }
