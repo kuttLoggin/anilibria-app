@@ -116,18 +116,17 @@ class VideoPlayerGlue(
         playbackListener?.onUpdateProgress()
     }
 
-    /**
-     * Вызывается, когда переключаемся между Play/Pause.
-     * Если вы нажимаете аппаратную кнопку Play/Pause и `BasePlayerFragment` «глотает»
-     * это событие, Leanback может не запустить «автоскрытие» оверлея автоматически.
-     *
-     * Чтобы этого не случилось, мы явно перезапускаем показ + автоскрытие.
-     */
     override fun onPlayStateChanged() {
         super.onPlayStateChanged()
-        fragment.showControlsOverlay(false)
+        // Кнопки пропуска управляют фокусом отдельно от основной панели.
+        if (!fragment.isShowOrHideControlsOverlayOnUserInteraction) return
+
+        // Перезапускаем таймер после возобновления, включая аппаратный Play/Pause.
         fragment.isControlsOverlayAutoHideEnabled = false
-        fragment.isControlsOverlayAutoHideEnabled = true
+        fragment.isControlsOverlayAutoHideEnabled = isPlaying
+        if (!isPlaying) {
+            fragment.showControlsOverlay(false)
+        }
     }
 
     private fun shouldDispatchAction(action: Action): Boolean {
