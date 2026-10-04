@@ -41,6 +41,8 @@ open class BasePlayerFragment : VideoSupportFragment() {
     protected var skipsPart: PlayerSkipsPart? = null
         private set
 
+    private var isPlayPausePressed = false
+
     @SuppressLint("RestrictedApi")
     @OptIn(UnstableApi::class)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -51,12 +53,18 @@ open class BasePlayerFragment : VideoSupportFragment() {
 
         setOnKeyInterceptListener { _, keyCode, event ->
             if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) {
-                if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
-                    if (playerGlue?.isPlaying == true) {
-                        playerGlue?.pause()
-                    } else {
-                        playerGlue?.play()
+                when (event.action) {
+                    KeyEvent.ACTION_DOWN -> {
+                        if (!isPlayPausePressed && event.repeatCount == 0) {
+                            if (playerGlue?.isPlaying == true) {
+                                playerGlue?.pause()
+                            } else {
+                                playerGlue?.play()
+                            }
+                        }
+                        isPlayPausePressed = true
                     }
+                    KeyEvent.ACTION_UP -> isPlayPausePressed = false
                 }
                 true
             } else {
@@ -106,6 +114,7 @@ open class BasePlayerFragment : VideoSupportFragment() {
     }
 
     override fun onPause() {
+        isPlayPausePressed = false
         super.onPause()
         playerGlue?.pause()
     }
