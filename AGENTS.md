@@ -33,7 +33,8 @@ new fixes or features.
   to Auto; manual quality is stored separately per release and does not use the
   legacy global quality preference. Episodes missing that manual quality use
   Auto temporarily; selecting Auto clears the release's manual preference.
-  It is included in `tv-development`; no upstream PR has been created yet.
+  It is included in `tv-development`. Its upstream PR is
+  https://github.com/anilibria/anilibria-app/pull/307, targeting `develop`.
 - Write PR descriptions in Russian. State concrete reproduction examples and
   disclose OpenAI Codex assistance when preparing PRs for this project.
 - Keep each upstream PR limited to one fix or feature. Do not include the local
