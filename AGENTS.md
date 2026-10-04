@@ -20,6 +20,8 @@ new fixes or features.
   https://github.com/anilibria/anilibria-app/pull/306, targeting `develop`.
   It also reserves space for description scrollbars and moves focus down
   to the first visible action after reaching the end of the description.
+  Pressing Up closes the player controls on key release when no new focus
+  target exists above; navigation within the controls remains available.
 - `fix/tv-otp-auth` contains only the authentication fix and regression
   tests. Its upstream PR is https://github.com/anilibria/anilibria-app/pull/304
   (replacing closed PR #303 after renaming the source branch),
