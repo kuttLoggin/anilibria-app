@@ -71,6 +71,13 @@ class AppPreference<T>(
             sharedPreferences.edit { set(key, value) }
         }
 
+    fun withDefault(defaultValue: T): AppPreference<T> = AppPreference(
+        key = key,
+        sharedPreferences = sharedPreferences,
+        get = { key -> if (contains(key)) get(this, key) else defaultValue },
+        set = set,
+    )
+
     override suspend fun collect(collector: FlowCollector<T>): Nothing {
         _state.collect(collector)
     }

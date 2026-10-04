@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.launchIn
 import ru.radiationx.anilibria.common.fragment.GuidedRouter
 import ru.radiationx.anilibria.screen.LifecycleViewModel
 import ru.radiationx.anilibria.screen.player.PlayerExtra
-import ru.radiationx.data.datasource.holders.PreferencesHolder
 import ru.radiationx.data.entity.common.PlayerQuality
 import ru.radiationx.data.entity.domain.release.Release
 import ru.radiationx.data.interactors.ReleaseInteractor
@@ -16,7 +15,7 @@ import javax.inject.Inject
 class PlayerQualityViewModel @Inject constructor(
     private val argExtra: PlayerExtra,
     private val releaseInteractor: ReleaseInteractor,
-    private val preferencesHolder: PreferencesHolder,
+    private val qualityPreference: PlayerQualityPreference,
     private val guidedRouter: GuidedRouter,
 ) : LifecycleViewModel() {
 
@@ -32,7 +31,7 @@ class PlayerQualityViewModel @Inject constructor(
     init {
         combine(
             releaseInteractor.observeFull(argExtra.releaseId),
-            preferencesHolder.playerQuality
+            qualityPreference.quality
         ) { release, quality ->
             updateAvailable(release, quality)
         }.launchIn(viewModelScope)
@@ -46,7 +45,7 @@ class PlayerQualityViewModel @Inject constructor(
             FULL_HD_ACTION_ID -> PlayerQuality.FULLHD
             else -> PlayerQuality.SD
         }
-        preferencesHolder.playerQuality.value = value
+        qualityPreference.quality.value = value
     }
 
     private fun updateAvailable(release: Release, quality: PlayerQuality) {

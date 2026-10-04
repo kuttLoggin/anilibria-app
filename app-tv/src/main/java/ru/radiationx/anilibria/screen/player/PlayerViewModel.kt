@@ -12,6 +12,7 @@ import ru.radiationx.anilibria.screen.PlayerEndSeasonGuidedScreen
 import ru.radiationx.anilibria.screen.PlayerEpisodesGuidedScreen
 import ru.radiationx.anilibria.screen.PlayerQualityGuidedScreen
 import ru.radiationx.anilibria.screen.PlayerSpeedGuidedScreen
+import ru.radiationx.anilibria.screen.player.quality.PlayerQualityPreference
 import ru.radiationx.data.datasource.holders.PreferencesHolder
 import ru.radiationx.data.entity.common.PlayerQuality
 import ru.radiationx.data.entity.domain.release.Episode
@@ -29,6 +30,7 @@ class PlayerViewModel @Inject constructor(
     private val preferencesHolder: PreferencesHolder,
     private val guidedRouter: GuidedRouter,
     private val playerController: PlayerController,
+    private val qualityPreference: PlayerQualityPreference,
 ) : LifecycleViewModel() {
 
     val videoData = MutableStateFlow<Video?>(null)
@@ -44,7 +46,7 @@ class PlayerViewModel @Inject constructor(
 
     init {
         playerController.reset()
-        qualityState.value = preferencesHolder.playerQuality.value
+        qualityState.value = qualityPreference.quality.value
         speedState.value = preferencesHolder.playSpeed.value
 
         playerController
@@ -56,8 +58,8 @@ class PlayerViewModel @Inject constructor(
             }
             .launchIn(viewModelScope)
 
-        preferencesHolder
-            .playerQuality
+        qualityPreference
+            .quality
             .onEach {
                 currentQuality = it
                 updateQuality()
