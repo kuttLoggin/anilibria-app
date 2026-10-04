@@ -54,6 +54,11 @@ open class BasePlayerFragment : VideoSupportFragment() {
         isControlsOverlayAutoHideEnabled = true
         isShowOrHideControlsOverlayOnUserInteraction = true
 
+        requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        initializePlayer()
+        initializeRows()
+
+        // Attach after the glue host, which installs its own key listener during initialization.
         setOnKeyInterceptListener { _, keyCode, event ->
             if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) {
                 when (event.action) {
@@ -96,13 +101,9 @@ open class BasePlayerFragment : VideoSupportFragment() {
                     else -> false
                 }
             } else {
-                false
+                playerGlue?.onKey(view, keyCode, event) == true
             }
         }
-
-        requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        initializePlayer()
-        initializeRows()
 
         skipsPart = PlayerSkipsPart(
             parent = view as FrameLayout,
