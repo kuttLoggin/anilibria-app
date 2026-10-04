@@ -80,7 +80,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:layout_marginEnd="16dp"
-        android:breakStrategy="simple"
+        android:breakStrategy="balanced"
         android:textColor="@color/dark_textDefault"
         android:textSize="16sp"
         app:layout_constraintEnd_toStartOf="@id/rowReleaseHQMarker"
