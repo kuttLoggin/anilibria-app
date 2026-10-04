@@ -16,6 +16,12 @@ new fixes or features.
   tests. Its upstream PR is https://github.com/anilibria/anilibria-app/pull/304
   (replacing closed PR #303 after renaming the source branch),
   targeting `anilibria/anilibria-app:develop`.
+- `fix/tv-player-letterbox` contains the black player background fix, reproduced
+  with "Suzume" and verified on the user's TV. Its upstream PR is
+  https://github.com/anilibria/anilibria-app/pull/305. This fix is also included
+  in `tv-development`.
+- Write PR descriptions in Russian. State concrete reproduction examples and
+  disclose OpenAI Codex assistance when preparing PRs for this project.
 - Keep each upstream PR limited to one fix or feature. Do not include the local
   debug setup or these workflow instructions in unrelated upstream PRs.
 - Before starting another change, inspect Git status, the current branch and
