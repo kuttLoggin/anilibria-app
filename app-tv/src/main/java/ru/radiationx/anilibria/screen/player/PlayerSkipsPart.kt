@@ -45,10 +45,12 @@ class PlayerSkipsPart(
         binding.root.isVisible = false
         binding.btSkipsSkip.text = skipButtonText
         binding.btSkipsCancel.setOnClickListener {
+            if (!appearanceFinished) return@setOnClickListener
             dismissSkip()
             playerSkipsTimer.value = false
         }
         binding.btSkipsSkip.setOnClickListener {
+            if (!appearanceFinished) return@setOnClickListener
             skip()
             playerSkipsTimer.value = true
         }
@@ -133,9 +135,10 @@ class PlayerSkipsPart(
         appearanceFinished = false
         binding.root.alpha = 0f
         binding.root.isVisible = true
-        setButtonsEnabled(false)
+        setButtonsEnabled(true)
         onSkipShow()
-        trace("appearanceStarted")
+        binding.btSkipsSkip.requestFocus()
+        trace("appearanceStarted skipFocused=${binding.btSkipsSkip.hasFocus()}")
         binding.root.animate()
             .alpha(1f)
             .setDuration(250)
@@ -143,8 +146,6 @@ class PlayerSkipsPart(
             .withEndAction {
                 if (disposed || !isSkipVisible) return@withEndAction
                 appearanceFinished = true
-                setButtonsEnabled(true)
-                binding.btSkipsSkip.requestFocus()
                 trace("appearanceFinished")
                 updateCountdown()
             }
