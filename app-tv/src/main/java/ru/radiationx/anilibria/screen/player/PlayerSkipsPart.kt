@@ -193,7 +193,7 @@ class PlayerSkipsPart(
         val canCount = !disposed && isSkipVisible && autoSkipEnabled &&
             playbackState.canCount(appearanceFinished, binding.btSkipsCancel.hasFocus())
         countdown.setRunning(canCount, SystemClock.uptimeMillis())
-        val text = if (autoSkipEnabled && appearanceFinished) {
+        val text = if (autoSkipEnabled && isSkipVisible) {
             "$skipButtonText (${countdown.remainingSeconds})"
         } else skipButtonText
         if (text != lastTimerText) {
