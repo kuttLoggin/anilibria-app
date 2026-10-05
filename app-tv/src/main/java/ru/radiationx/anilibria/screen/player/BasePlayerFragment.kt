@@ -55,35 +55,26 @@ open class BasePlayerFragment : VideoSupportFragment() {
             onSeek = {
                 player?.seekTo(it)
             },
+            onPlayPause = { player?.let { it.playWhenReady = !it.playWhenReady } },
             onSkipShow = {
                 isShowOrHideControlsOverlayOnUserInteraction = false
-                hideControlsOverlay(false)
+                isControlsOverlayAutoHideEnabled = false
             },
             onSkipHide = {
                 isShowOrHideControlsOverlayOnUserInteraction = true
-                if (skipsPart?.isSeeking == true) {
-                    isControlsOverlayAutoHideEnabled = false
-                    showControlsOverlay(false)
-                }
+                isControlsOverlayAutoHideEnabled = skipsPart?.isSeeking != true && player?.isPlaying == true
+                if (skipsPart?.isSeeking == true) showControlsOverlay(false)
             }
         )
 
+        playerGlue?.isControlsOverlayAutoHideEnabled = false
         playerGlue?.playbackListener = object : VideoPlayerGlue.PlaybackListener {
             @UnstableApi
             override fun onUpdateProgress() {
-                skipsPart?.update(player?.currentPosition ?: 0)
+                updateSkipPlaybackState()
             }
         }
 
-        fadeCompleteListener = object : OnFadeCompleteListener() {
-
-            override fun onFadeInComplete() {
-                super.onFadeInComplete()
-                // workaround for hiding controls when user click "enter"
-                isControlsOverlayAutoHideEnabled = false
-                isControlsOverlayAutoHideEnabled = true
-            }
-        }
     }
 
     override fun onVideoSizeChanged(videoWidth: Int, videoHeight: Int) {
@@ -100,6 +91,7 @@ open class BasePlayerFragment : VideoSupportFragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        skipsPart?.dispose()
         skipsPart = null
         playerGlue?.playbackListener = null
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -144,6 +136,28 @@ open class BasePlayerFragment : VideoSupportFragment() {
 
         player.addListener(object : Player.Listener {
 
+            override fun onRenderedFirstFrame() {
+                skipsPart?.onFrameRendered(this@BasePlayerFragment.player?.currentPosition ?: 0)
+                updateSkipPlaybackState()
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                updateSkipPlaybackState()
+            }
+
+            override fun onPositionDiscontinuity(
+                oldPosition: Player.PositionInfo,
+                newPosition: Player.PositionInfo,
+                reason: Int,
+            ) {
+                if (reason == Player.DISCONTINUITY_REASON_SEEK ||
+                    reason == Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT
+                ) {
+                    skipsPart?.onFramePending(newPosition.positionMs, oldPosition.positionMs != newPosition.positionMs || oldPosition.mediaItemIndex != newPosition.mediaItemIndex)
+                    updateSkipPlaybackState()
+                }
+            }
+
             override fun onPlaybackStateChanged(playbackState: Int) {
                 super.onPlaybackStateChanged(playbackState)
                 when (playbackState) {
@@ -155,6 +169,7 @@ open class BasePlayerFragment : VideoSupportFragment() {
                     Player.STATE_IDLE -> {
                     }
                 }
+                updateSkipPlaybackState()
             }
         })
 
@@ -197,12 +212,23 @@ open class BasePlayerFragment : VideoSupportFragment() {
         this.playerGlue = playerGlue
     }
 
+    @OptIn(UnstableApi::class)
+    private fun updateSkipPlaybackState() {
+        val player = player ?: return
+        skipsPart?.onPlaybackChanged(player.playbackState == Player.STATE_READY, player.isPlaying, player.currentPosition)
+        val autoHide = isShowOrHideControlsOverlayOnUserInteraction &&
+            skipsPart?.isSeeking != true && player.isPlaying
+        if (isControlsOverlayAutoHideEnabled != autoHide) isControlsOverlayAutoHideEnabled = autoHide
+        if (!player.playWhenReady && isShowOrHideControlsOverlayOnUserInteraction) showControlsOverlay(false)
+    }
+
     private fun releasePlayer() {
         player?.release()
         player = null
     }
 
     protected fun preparePlayer(url: String) {
+        skipsPart?.onVideoLoading()
         player?.setMediaItem(MediaItem.fromUri(Uri.parse(url)), false)
         player?.prepare()
     }
