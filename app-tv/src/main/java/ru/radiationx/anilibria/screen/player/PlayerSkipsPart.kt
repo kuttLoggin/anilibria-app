@@ -49,9 +49,8 @@ class PlayerSkipsPart(
 
     private val _timerFlow = MutableSharedFlow<Int?>(replay = 1)
 
-    private var playerSkips: PlayerSkips? = null
-    private val skippedList = mutableSetOf<PlayerSkips.Skip>()
-    private var currentPosition = 0L
+    private val skipState = PlayerSkipState()
+    val isSeeking: Boolean get() = skipState.isSeeking
     private var currentSkipShow = false
     private var timerJob: Job? = null
 
@@ -68,13 +67,22 @@ class PlayerSkipsPart(
     }
 
     fun setSkips(skips: PlayerSkips?) {
-        playerSkips = skips
-        skippedList.clear()
+        skipState.reset(skips)
+    }
+
+    fun onSeekStarted() {
+        skipState.startSeek()
+        stopTimer()
+        update(skipState.currentPosition)
+    }
+
+    fun onSeekFinished(position: Long, cancelled: Boolean) {
+        skipState.finishSeek(position, cancelled)
+        update(position)
     }
 
     fun update(position: Long) {
-        currentPosition = position
-        autoCancel()
+        skipState.update(position)
         val skip = getCurrentSkip()
         val hasSkip = skip != null
         binding.apply {
@@ -95,30 +103,10 @@ class PlayerSkipsPart(
         binding.root.isVisible = hasSkip
     }
 
-    private fun getCurrentSkip(): PlayerSkips.Skip? {
-        return playerSkips?.opening?.takeIf { checkSkip(it) }
-            ?: playerSkips?.ending?.takeIf { checkSkip(it) }
-    }
-
-    private fun checkSkip(skip: PlayerSkips.Skip): Boolean {
-        return !skippedList.contains(skip) && currentPosition >= skip.start && currentPosition <= skip.end
-    }
-
-    private fun autoCancel() {
-        val opening = playerSkips?.opening
-        val ending = playerSkips?.ending
-
-        if (opening != null && opening !in skippedList && opening.end < currentPosition) {
-            skippedList.add(opening)
-        }
-
-        if (ending != null && ending !in skippedList && ending.end < currentPosition) {
-            skippedList.add(ending)
-        }
-    }
+    private fun getCurrentSkip(): PlayerSkips.Skip? = skipState.currentSkip
 
     private fun cancelSkip() {
-        getCurrentSkip()?.also { skippedList.add(it) }
+        skipState.dismissCurrentSkip()
     }
 
     private suspend fun isAutoSkipEnabled(): Boolean = withContext(Dispatchers.IO) {
@@ -154,7 +142,7 @@ class PlayerSkipsPart(
 
     private fun startTimerIfNeed() {
         coroutineScope.launch {
-            if (isAutoSkipEnabled()) {
+            if (isAutoSkipEnabled() && getCurrentSkip() != null) {
                 observeSkipTimerState()
                 startTimer()
             }
