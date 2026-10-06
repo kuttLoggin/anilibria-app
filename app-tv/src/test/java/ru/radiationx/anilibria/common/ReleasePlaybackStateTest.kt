@@ -43,12 +43,71 @@ class ReleasePlaybackStateTest {
         val state = ReleasePlaybackState.resolve(episodes, listOf(access(0), access(1), foreign))
         assertFalse(state.allEpisodesViewed)
         assertFalse(state.hasProgress)
-        assertNull(state.continueEpisodeId)
+        assertEquals(episodes.last(), state.continueEpisodeId)
+        assertEquals("Продолжить (3 серия)", state.continueText)
     }
 
     @Test fun `empty playlist never offers restart`() {
         val state = ReleasePlaybackState.resolve(emptyList(), listOf(access(0)))
         assertFalse(state.allEpisodesViewed)
         assertNull(state.continueEpisodeId)
+        assertFalse(state.showPlayAction)
+    }
+
+    @Test fun `single unstarted episode keeps watch action`() {
+        val state = ReleasePlaybackState.resolve(episodes.take(1), emptyList())
+        assertTrue(state.showPlayAction)
+        assertNull(state.continueText)
+    }
+
+    @Test fun `single unfinished episode shows time and hides watch action`() {
+        val state = ReleasePlaybackState.resolve(episodes.take(1), listOf(access(0, false, 754_000L)))
+        assertEquals("Продолжить (12:34)", state.continueText)
+        assertEquals(episodes.first(), state.continueEpisodeId)
+        assertFalse(state.showPlayAction)
+    }
+
+    @Test fun `single viewed episode offers restart and hides watch action`() {
+        val state = ReleasePlaybackState.resolve(episodes.take(1), listOf(access(0)))
+        assertEquals("Заново", state.continueText)
+        assertEquals(episodes.first(), state.continueEpisodeId)
+        assertFalse(state.showPlayAction)
+    }
+
+    @Test fun `multiple episodes show number and unfinished position`() {
+        val state = ReleasePlaybackState.resolve(episodes, listOf(access(0, false, 754_000L)))
+        assertEquals("Продолжить (1 серия - 12:34)", state.continueText)
+        assertEquals(episodes.first(), state.continueEpisodeId)
+        assertTrue(state.showPlayAction)
+    }
+
+    @Test fun `viewed episode advances to unstarted next episode`() {
+        val state = ReleasePlaybackState.resolve(episodes, listOf(access(0, seek = 1_400_000L)))
+        assertEquals("Продолжить (2 серия)", state.continueText)
+        assertEquals(episodes[1], state.continueEpisodeId)
+    }
+
+    @Test fun `next unfinished episode retains its time even if previous was accessed later`() {
+        val state = ReleasePlaybackState.resolve(episodes, listOf(access(0, seek = 1_400_000L, date = 5L), access(1, false, 754_000L)))
+        assertEquals("Продолжить (2 серия - 12:34)", state.continueText)
+        assertEquals(episodes[1], state.continueEpisodeId)
+    }
+
+    @Test fun `already viewed next episodes are skipped`() {
+        val state = ReleasePlaybackState.resolve(episodes, listOf(access(0, seek = 1_400_000L, date = 5L), access(1)))
+        assertEquals("Продолжить (3 серия)", state.continueText)
+        assertEquals(episodes.last(), state.continueEpisodeId)
+    }
+
+    @Test fun `unfinished earlier gap is offered when latest episode is viewed`() {
+        val state = ReleasePlaybackState.resolve(episodes, listOf(access(0), access(2, seek = 1_400_000L, date = 5L)))
+        assertEquals("Продолжить (2 серия)", state.continueText)
+        assertEquals(episodes[1], state.continueEpisodeId)
+    }
+
+    @Test fun `manually viewed episode can advance without a timecode`() {
+        val state = ReleasePlaybackState.resolve(episodes, listOf(access(0)))
+        assertEquals("Продолжить (2 серия)", state.continueText)
+        assertEquals(episodes[1], state.continueEpisodeId)
     }
 }
