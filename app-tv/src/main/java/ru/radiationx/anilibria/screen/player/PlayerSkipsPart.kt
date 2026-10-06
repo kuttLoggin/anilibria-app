@@ -35,6 +35,7 @@ class PlayerSkipsPart(
     val isSeeking: Boolean get() = skipState.isSeeking
     private var activeSkip: PlayerSkips.Skip? = null
     private var isSkipVisible = false
+    private var isHiding = false
     private var appearanceFinished = false
     private var autoSkipEnabled = false
     private var disposed = false
@@ -69,7 +70,7 @@ class PlayerSkipsPart(
     }
 
     fun setSkips(skips: PlayerSkips?) {
-        hidePrompt()
+        hidePrompt(immediate = true)
         resetTimer()
         activeSkip = null
         skipState.reset(skips)
@@ -77,6 +78,7 @@ class PlayerSkipsPart(
     }
 
     fun onVideoLoading() {
+        hidePrompt(immediate = true)
         playbackState.framePending()
         playbackState.update(isReady = false, isPlaying = false)
         resetTimer()
@@ -131,9 +133,11 @@ class PlayerSkipsPart(
 
     private fun showPrompt() {
         if (isSkipVisible) return
+        binding.root.animate().withEndAction(null).cancel()
+        isHiding = false
         isSkipVisible = true
         appearanceFinished = false
-        binding.root.alpha = 0f
+        if (!binding.root.isVisible) binding.root.alpha = 0f
         binding.root.isVisible = true
         setButtonsEnabled(true)
         onSkipShow()
@@ -152,15 +156,36 @@ class PlayerSkipsPart(
             .start()
     }
 
-    private fun hidePrompt() {
-        if (!isSkipVisible) return
+    private fun hidePrompt(immediate: Boolean = false) {
+        if (!isSkipVisible && (!immediate || !isHiding)) return
+        val notifyHide = isSkipVisible
         isSkipVisible = false
         appearanceFinished = false
         binding.root.animate().withEndAction(null).cancel()
-        binding.root.isVisible = false
-        setButtonsEnabled(false)
-        trace("hidden")
-        onSkipHide()
+        countdown.setRunning(false, SystemClock.uptimeMillis())
+        isHiding = !immediate
+        if (immediate) {
+            binding.root.isVisible = false
+            binding.root.alpha = 0f
+            setButtonsEnabled(false)
+            trace("hiddenImmediately")
+        } else {
+            // Clicks and the countdown are already blocked; keep styling/text during the fade.
+            trace("disappearanceStarted")
+            binding.root.animate()
+                .alpha(0f)
+                .setDuration(250)
+                .setInterpolator(DecelerateInterpolator())
+                .withEndAction {
+                    if (disposed || !isHiding || isSkipVisible) return@withEndAction
+                    isHiding = false
+                    binding.root.isVisible = false
+                    setButtonsEnabled(false)
+                    trace("disappearanceFinished")
+                }
+                .start()
+        }
+        if (notifyHide) onSkipHide()
     }
 
     private fun setButtonsEnabled(enabled: Boolean) {
@@ -193,6 +218,7 @@ class PlayerSkipsPart(
         val canCount = !disposed && isSkipVisible && autoSkipEnabled &&
             playbackState.canCount(appearanceFinished, binding.btSkipsCancel.hasFocus())
         countdown.setRunning(canCount, SystemClock.uptimeMillis())
+        if (isHiding) return
         val text = if (autoSkipEnabled && isSkipVisible) {
             "$skipButtonText (${countdown.remainingSeconds})"
         } else skipButtonText
@@ -209,12 +235,16 @@ class PlayerSkipsPart(
         timerJob = null
         autoSkipEnabled = false
         countdown.reset()
-        binding.btSkipsSkip.text = skipButtonText
-        lastTimerText = skipButtonText
+        if (!isHiding) {
+            binding.btSkipsSkip.text = skipButtonText
+            lastTimerText = skipButtonText
+        }
     }
 
     fun dispose() {
         disposed = true
+        isHiding = false
+        isSkipVisible = false
         resetTimer()
         binding.root.animate().withEndAction(null).cancel()
         binding.btSkipsCancel.onFocusChangeListener = null
