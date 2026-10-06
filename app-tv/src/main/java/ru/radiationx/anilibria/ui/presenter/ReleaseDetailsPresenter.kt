@@ -143,8 +143,8 @@ class LibriaReleaseViewHolder(
         binding.rowReleaseHQMarker.isVisible = details.hasFullHd
 
         binding.rowReleaseActionPlay.isVisible = details.hasEpisodes
-        binding.rowReleaseActionContinue.isVisible = details.hasViewed
-        binding.rowReleaseActionOther.isVisible = details.hasEpisodes || details.hasViewed
+        binding.rowReleaseActionContinue.isVisible = details.hasProgress
+        binding.rowReleaseActionOther.isVisible = details.hasEpisodes || details.hasProgress
         binding.rowReleaseActionFavorite.text = if (details.isFavorite) {
             "Убрать из избранного"
         } else {
@@ -152,7 +152,7 @@ class LibriaReleaseViewHolder(
         }
 
         val firstAction = when {
-            details.hasViewed -> binding.rowReleaseActionContinue
+            details.hasProgress -> binding.rowReleaseActionContinue
             details.hasEpisodes -> binding.rowReleaseActionPlay
             else -> binding.rowReleaseActionFavorite
         }

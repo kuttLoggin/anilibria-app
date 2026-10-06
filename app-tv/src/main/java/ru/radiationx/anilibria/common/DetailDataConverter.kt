@@ -35,7 +35,7 @@ class DetailDataConverter @Inject constructor() {
             hasFullHd = episodes.any { PlayerQuality.FULLHD in it.qualityInfo },
             isFavorite = favoriteInfo.isAdded,
             hasEpisodes = episodes.isNotEmpty(),
-            hasViewed = accesses.any { it.isViewed },
+            hasProgress = accesses.any { it.hasProgress },
             hasWebPlayer = moonwalkLink != null
         )
     }

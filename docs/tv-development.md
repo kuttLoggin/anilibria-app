@@ -196,3 +196,31 @@ their checkouts change.
   and clearing local overrides. The installed corrected APK is also saved at
   `outputs/tv-diagnostics/AniLiberty-TV-favorite-card-debug.apk`.
   The user authorized publication after local/device testing; PR #311 is OPEN.
+
+### feature/tv-watched-progress
+
+- Local independent branch from current upstream/develop a188bfd5, checkout
+  outputs/tv-watched-progress, topic commit e870c2ff. No pending PR dependency.
+  The user requested preparation for a PR but explicitly withheld PR creation;
+  the branch is not pushed and no PR exists.
+- TV separates saved progress from isViewed. A valid ending range takes priority;
+  otherwise the final five minutes count. Natural completion also counts.
+  Confirmed seeks count; Leanback preview positions do not. Viewed flags survive
+  rewinding until a manual history reset. Previous flags are preserved.
+- Continue controls and stopped-position descriptions use nonzero seek.
+  Both TV episode menus show a check icon for isViewed; reactive updates preserve
+  the selected row. Manual mark-all adds checks without inventing progress.
+  Mobile retains its existing automatic flag behavior through setAccessSeek;
+  TV uses the new setPlaybackProgress contract.
+- Changes are also applied to tv-development. Both TV and mobile builds pass.
+  Cumulative: 55 TV and 12 data tests. Independent: 9 TV and 5 data tests.
+  The final cumulative APK is installed on Smart TV Pro.
+- Takt Op. Destiny episode 11: no check at 00:19/17:47, a check at 18:58
+  out of 23:41, cancelled preview at 19:15 leaves the flag false, rewind to
+  01:36 preserves true. Manual mark-all produces 12 checks with zero seek
+  and no Continue button. Original history was restored and compared after restart.
+  Real ending timecodes and natural completion are unit-tested; separate device
+  checks of those two scenarios were not performed in this session.
+- Evidence: outputs/tv-diagnostics/watched-progress-validation.md;
+  final APK: outputs/tv-diagnostics/AniLiberty-TV-watched-progress-debug.apk.
+  Russian PR description draft: outputs/pr-descriptions/tv-watched-progress.md.

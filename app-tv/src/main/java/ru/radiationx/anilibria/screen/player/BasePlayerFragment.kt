@@ -55,6 +55,9 @@ open class BasePlayerFragment : VideoSupportFragment() {
     protected var skipsPart: PlayerSkipsPart? = null
         private set
 
+    protected var isPlaybackSeeking = false
+        private set
+
     private var isPlayPausePressed = false
     private var upNavigationFocus: View? = null
 
@@ -62,6 +65,7 @@ open class BasePlayerFragment : VideoSupportFragment() {
     @OptIn(UnstableApi::class)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        isPlaybackSeeking = false
         view.setBackgroundColor(Color.BLACK)
 
         isControlsOverlayAutoHideEnabled = true
@@ -319,6 +323,7 @@ open class BasePlayerFragment : VideoSupportFragment() {
                                 delegate.playbackSeekDataProvider
 
                             override fun onSeekStarted() {
+                                isPlaybackSeeking = true
                                 skipsPart?.onSeekStarted()
                                 delegate.onSeekStarted()
                             }
@@ -329,6 +334,7 @@ open class BasePlayerFragment : VideoSupportFragment() {
 
                             override fun onSeekFinished(cancelled: Boolean) {
                                 delegate.onSeekFinished(cancelled)
+                                isPlaybackSeeking = false
                                 skipsPart?.onSeekFinished(
                                     this@BasePlayerFragment.player?.currentPosition ?: 0,
                                     cancelled,

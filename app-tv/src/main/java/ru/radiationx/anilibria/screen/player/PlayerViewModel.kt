@@ -20,6 +20,7 @@ import ru.radiationx.data.datasource.holders.PreferencesHolder
 import ru.radiationx.data.entity.common.PlayerQuality
 import ru.radiationx.data.entity.domain.release.Episode
 import ru.radiationx.data.entity.domain.release.Release
+import ru.radiationx.data.entity.domain.types.EpisodeId
 import ru.radiationx.data.interactors.ReleaseInteractor
 import ru.radiationx.data.repository.HistoryRepository
 import ru.radiationx.shared.ktx.EventFlow
@@ -47,6 +48,20 @@ class PlayerViewModel @Inject constructor(
     private val currentEpisodeData = MutableStateFlow<Episode?>(null)
     private val currentEpisode: Episode? get() = currentEpisodeData.value
     private var currentComplete: Boolean? = null
+    private var currentDuration = 0L
+    private var lastProgressSavedAt = 0L
+    private var watchThresholdReached = false
+
+    fun onPlaybackProgress(episodeId: EpisodeId, position: Long, duration: Long) {
+        val episode = currentEpisode ?: return
+        if (episode.id != episodeId || position <= 0L) return
+        if (duration > 0L) currentDuration = duration
+        val viewed = EpisodeWatchPolicy.isViewed(position, currentDuration, episode.skips?.ending)
+        val now = System.currentTimeMillis()
+        if ((viewed && !watchThresholdReached) || now - lastProgressSavedAt >= 10_000L) {
+            saveEpisode(position)
+        }
+    }
 
     init {
         playerController.reset()
@@ -151,7 +166,7 @@ class PlayerViewModel @Inject constructor(
         if (currentComplete == true) return
         currentComplete = true
 
-        saveEpisode(position)
+        saveEpisode(position, ended = true)
         val nextEpisode = getNextEpisode()
         if (nextEpisode != null) {
             playEpisode(nextEpisode)
@@ -161,6 +176,8 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun onPrepare(duration: Long) {
+        if (duration <= 0L) return
+        currentDuration = duration
         val release = getCurrentRelease() ?: return
         val episode = currentEpisode ?: return
         viewModelScope.launch {
@@ -191,19 +208,25 @@ class PlayerViewModel @Inject constructor(
     private fun getCurrentEpisodeIndex(): Int =
         currentEpisodes.indexOfFirst { it.id == currentEpisode?.id }
 
-    private fun saveEpisode(position: Long) {
+    private fun saveEpisode(position: Long, ended: Boolean = false) {
         val episode = currentEpisode ?: return
         if (position < 0) {
             return
         }
+        val viewed = EpisodeWatchPolicy.isViewed(position, currentDuration, episode.skips?.ending, ended)
+        watchThresholdReached = watchThresholdReached || viewed
+        lastProgressSavedAt = System.currentTimeMillis()
         viewModelScope.launch {
-            releaseInteractor.setAccessSeek(episode.id, position)
+            releaseInteractor.setPlaybackProgress(episode.id, position, viewed)
         }
     }
 
     private fun playEpisode(episode: Episode, force: Boolean = false) {
         currentEpisodeData.value = episode
         currentComplete = null
+        currentDuration = 0L
+        lastProgressSavedAt = 0L
+        watchThresholdReached = false
         updateQuality()
         updateEpisode(force)
         viewModelScope.launch {
@@ -228,7 +251,8 @@ class PlayerViewModel @Inject constructor(
                 seek = access?.seek ?: 0,
                 title = release.title.orEmpty(),
                 subtitle = episode.title.orEmpty(),
-                episode.skips
+                skips = episode.skips,
+                episodeId = episode.id,
             )
             if (force || videoData.value?.url != newVideo.url) {
                 videoData.value = newVideo
