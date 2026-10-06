@@ -108,6 +108,24 @@ new fixes or features.
   APK and validation report are saved under `outputs/tv-diagnostics/skip-lifecycle*`.
 - Keep each upstream PR limited to one fix or feature. Do not include the local
   debug setup or these workflow instructions in unrelated upstream PRs.
+- `feature/tv-poster-status` is a local independent feature branch based on
+  `upstream/develop` (`a188bfd5`), with its checkout in `outputs/tv-poster-status`.
+  No PR has been created or branch pushed. It makes blocked release posters
+  grayscale and shows the block reason instead of list metadata, including
+  Continue Watching. Favorite releases show a translucent top-right star except
+  in Main's favorite updates and Watching's Favorites rows. The release detail
+  header poster stays unchanged. Lists and quick search now retain the API's
+  blocked/favorite fields. Successful favorite actions update visible badges;
+  per-account local actions take precedence over older API snapshots.
+  The same feature is applied to `tv-development`. Both TV builds pass:
+  cumulative 42 TV + 7 data tests, independent 7 TV + 2 data tests.
+  The cumulative mobile debug build also passes. The final cumulative APK is
+  installed on the TV; screenshots and testing evidence are in
+  `outputs/tv-diagnostics/posters-validation.md`, with the APK at
+  `outputs/tv-diagnostics/AniLiberty-TV-poster-status-debug.apk`.
+  Initial device checks cover Main, Watching, the two badge exceptions,
+  Continue Watching block reasons, Schedule, unchanged detail posters, and
+  adding/removing favorites. Await the user's testing before publishing a PR.
 - Before starting another change, inspect Git status, the current branch and
   the status of preceding PRs. Do not reset the cumulative branch to upstream
   or drop preceding changes merely to prepare a clean PR.
