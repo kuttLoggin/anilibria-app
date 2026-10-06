@@ -15,20 +15,33 @@ import androidx.leanback.app.VideoSupportFragmentGlueHost
 import androidx.leanback.widget.ArrayObjectAdapter
 import androidx.leanback.widget.ClassPresenterSelector
 import androidx.leanback.widget.ListRow
+import androidx.leanback.widget.PlaybackSeekUi
+import androidx.leanback.widget.PlaybackSeekDataProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DataSource
+import androidx.media3.common.C
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.source.LoadEventInfo
+import androidx.media3.exoplayer.source.MediaLoadData
+import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy
+import androidx.media3.exoplayer.upstream.LoadErrorHandlingPolicy
 import androidx.media3.ui.leanback.LeanbackPlayerAdapter
+import ru.radiationx.anilibria.BuildConfig
 import ru.radiationx.anilibria.R
 import ru.radiationx.anilibria.ui.presenter.cust.CustomListRowPresenter
 import ru.radiationx.data.datasource.holders.PreferencesHolder
 import ru.radiationx.data.player.PlayerDataSourceProvider
 import ru.radiationx.quill.get
+import timber.log.Timber
+import java.util.concurrent.atomic.AtomicBoolean
 
 open class BasePlayerFragment : VideoSupportFragment() {
 
@@ -115,25 +128,22 @@ open class BasePlayerFragment : VideoSupportFragment() {
             coroutineScope = viewLifecycleOwner.lifecycleScope,
             playerSkipsTimer = get<PreferencesHolder>().playerSkipsTimer,
             onSeek = { position -> player?.seekTo(position) },
+            onPlayPause = { player?.let { it.playWhenReady = !it.playWhenReady } },
             onSkipShow = {
                 isShowOrHideControlsOverlayOnUserInteraction = false
                 isControlsOverlayAutoHideEnabled = false
-                hideControlsOverlay(false)
             },
             onSkipHide = {
                 isShowOrHideControlsOverlayOnUserInteraction = true
-                isControlsOverlayAutoHideEnabled = playerGlue?.isPlaying == true
-                if (playerGlue?.isPlaying == true) {
-                    hideControlsOverlay(false)
-                } else {
-                    showControlsOverlay(false)
-                }
+                isControlsOverlayAutoHideEnabled = skipsPart?.isSeeking != true && player?.isPlaying == true
+                if (skipsPart?.isSeeking == true) showControlsOverlay(false)
             }
         )
 
+        playerGlue?.isControlsOverlayAutoHideEnabled = false
         playerGlue?.playbackListener = object : VideoPlayerGlue.PlaybackListener {
             override fun onUpdateProgress() {
-                skipsPart?.update(player?.currentPosition ?: 0)
+                updateSkipPlaybackState()
             }
         }
 
@@ -157,6 +167,7 @@ open class BasePlayerFragment : VideoSupportFragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         upNavigationFocus = null
+        skipsPart?.dispose()
         skipsPart = null
         playerGlue?.playbackListener = null
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -189,16 +200,88 @@ open class BasePlayerFragment : VideoSupportFragment() {
 
         val dataSourceProvider = get<PlayerDataSourceProvider>()
         val dataSourceType = dataSourceProvider.get()
-        val dataSourceFactory = DefaultDataSource.Factory(requireContext(), dataSourceType.factory)
+        val targetBufferBytes = PlayerBufferPolicy.targetBufferBytes(Runtime.getRuntime().maxMemory())
+        val loadControl = DefaultLoadControl.Builder()
+            .setTargetBufferBytes(targetBufferBytes)
+            .setPrioritizeTimeOverSizeThresholds(false)
+            .build()
+        val playbackPaused = AtomicBoolean(true)
+        val readGate = BufferReadGate(
+            limitBytes = targetBufferBytes * 2,
+            allocatedBytes = { loadControl.allocator.totalBytesAllocated },
+            isPlaybackPaused = { playbackPaused.get() },
+        )
+        val upstreamFactory = DefaultDataSource.Factory(requireContext(), dataSourceType.factory)
+        val dataSourceFactory = DataSource.Factory {
+            HlsBufferingDataSource(upstreamFactory.createDataSource(), readGate)
+        }
         val mediaSourceFactory = DefaultMediaSourceFactory(requireContext()).apply {
             setDataSourceFactory(dataSourceFactory)
+            setLoadErrorHandlingPolicy(object : DefaultLoadErrorHandlingPolicy() {
+                override fun getRetryDelayMsFor(loadErrorInfo: LoadErrorHandlingPolicy.LoadErrorInfo): Long =
+                    if (loadErrorInfo.exception is BufferCapacityException) C.TIME_UNSET
+                    else super.getRetryDelayMsFor(loadErrorInfo)
+            })
         }
         player = ExoPlayer.Builder(requireContext())
             .setMediaSourceFactory(mediaSourceFactory)
+            .setLoadControl(loadControl)
             .setHandleAudioBecomingNoisy(true)
             .build()
             .apply {
+                if (BuildConfig.DEBUG) {
+                    addAnalyticsListener(object : AnalyticsListener {
+                        override fun onLoadCompleted(
+                            eventTime: AnalyticsListener.EventTime,
+                            loadEventInfo: LoadEventInfo,
+                            mediaLoadData: MediaLoadData,
+                        ) {
+                            val runtime = Runtime.getRuntime()
+                            Timber.tag("TvPlayerBuffer").d(
+                                "positionMs=%d bufferedMs=%d allocatedBytes=%d heapUsedBytes=%d " +
+                                    "heapMaxBytes=%d targetBufferBytes=%d gateWaitCount=%d " +
+                                    "gatePeakAllocatedBytes=%d loadedBytes=%d video=%dx%d",
+                                currentPosition,
+                                totalBufferedDuration,
+                                loadControl.allocator.totalBytesAllocated,
+                                runtime.totalMemory() - runtime.freeMemory(),
+                                runtime.maxMemory(),
+                                targetBufferBytes,
+                                readGate.waitCount.get(),
+                                readGate.peakAllocatedBytes.get(),
+                                loadEventInfo.bytesLoaded,
+                                videoSize.width,
+                                videoSize.height,
+                            )
+                        }
+                    })
+                }
                 addListener(object : Player.Listener {
+                    override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                        playbackPaused.set(!playWhenReady)
+                    }
+
+                    override fun onRenderedFirstFrame() {
+                        skipsPart?.onFrameRendered(this@BasePlayerFragment.player?.currentPosition ?: 0)
+                        updateSkipPlaybackState()
+                    }
+
+                    override fun onIsPlayingChanged(isPlaying: Boolean) {
+                        updateSkipPlaybackState()
+                    }
+
+                    override fun onPositionDiscontinuity(
+                        oldPosition: Player.PositionInfo,
+                        newPosition: Player.PositionInfo,
+                        reason: Int,
+                    ) {
+                        if (reason == Player.DISCONTINUITY_REASON_SEEK ||
+                            reason == Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT
+                        ) {
+                            skipsPart?.onFramePending(newPosition.positionMs, oldPosition.positionMs != newPosition.positionMs || oldPosition.mediaItemIndex != newPosition.mediaItemIndex)
+                            updateSkipPlaybackState()
+                        }
+                    }
                     override fun onPlaybackStateChanged(playbackState: Int) {
                         super.onPlaybackStateChanged(playbackState)
                         when (playbackState) {
@@ -206,6 +289,7 @@ open class BasePlayerFragment : VideoSupportFragment() {
                             Player.STATE_READY -> onPreparePlaying()
                             Player.STATE_BUFFERING, Player.STATE_IDLE -> {}
                         }
+                        updateSkipPlaybackState()
                     }
                     override fun onPlayerError(error: PlaybackException) {
                         super.onPlayerError(error)
@@ -225,8 +309,46 @@ open class BasePlayerFragment : VideoSupportFragment() {
             fragment = this,
             playerAdapter = playerAdapter
         ).apply {
-            host = VideoSupportFragmentGlueHost(this@BasePlayerFragment)
+            host = object : VideoSupportFragmentGlueHost(this@BasePlayerFragment) {
+                override fun setPlaybackSeekUiClient(client: PlaybackSeekUi.Client?) {
+                    super.setPlaybackSeekUiClient(client?.let { delegate ->
+                        object : PlaybackSeekUi.Client() {
+                            override fun isSeekEnabled(): Boolean = delegate.isSeekEnabled
+
+                            override fun getPlaybackSeekDataProvider(): PlaybackSeekDataProvider? =
+                                delegate.playbackSeekDataProvider
+
+                            override fun onSeekStarted() {
+                                skipsPart?.onSeekStarted()
+                                delegate.onSeekStarted()
+                            }
+
+                            override fun onSeekPositionChanged(pos: Long) {
+                                delegate.onSeekPositionChanged(pos)
+                            }
+
+                            override fun onSeekFinished(cancelled: Boolean) {
+                                delegate.onSeekFinished(cancelled)
+                                skipsPart?.onSeekFinished(
+                                    this@BasePlayerFragment.player?.currentPosition ?: 0,
+                                    cancelled,
+                                )
+                            }
+                        }
+                    })
+                }
+            }
         }
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun updateSkipPlaybackState() {
+        val player = player ?: return
+        skipsPart?.onPlaybackChanged(player.playbackState == Player.STATE_READY, player.isPlaying, player.currentPosition)
+        val autoHide = isShowOrHideControlsOverlayOnUserInteraction &&
+            skipsPart?.isSeeking != true && player.isPlaying
+        if (isControlsOverlayAutoHideEnabled != autoHide) isControlsOverlayAutoHideEnabled = autoHide
+        if (!player.playWhenReady && isShowOrHideControlsOverlayOnUserInteraction) showControlsOverlay(false)
     }
 
     private fun releasePlayer() {
@@ -235,6 +357,7 @@ open class BasePlayerFragment : VideoSupportFragment() {
     }
 
     protected fun preparePlayer(url: String) {
+        skipsPart?.onVideoLoading()
         player?.setMediaItem(MediaItem.fromUri(url.toUri()), false)
         player?.prepare()
     }

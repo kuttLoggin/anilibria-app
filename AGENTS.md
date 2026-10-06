@@ -44,6 +44,68 @@ new fixes or features.
   https://github.com/anilibria/anilibria-app/pull/308, targeting `develop`.
 - Write PR descriptions in Russian. State concrete reproduction examples and
   disclose OpenAI Codex assistance when preparing PRs for this project.
+- `fix/tv-player-buffer-memory` is based on `upstream/develop`, with its checkout
+  in `outputs/tv-player-buffer-memory`. Its upstream PR is
+  https://github.com/anilibria/anilibria-app/pull/309, targeting `develop`.
+  The same changes are applied and committed to `tv-development`.
+  It gives the TV player a target buffer of
+  one eighth of Runtime.maxMemory(), capped at 64 MiB (24 MiB on the tested
+  192 MiB heap), and prioritizes bytes over the default duration target.
+  A single HLS chunk can exceed the target, so it leaves heap headroom for
+  large chunks and network buffers. The cumulative debug APK was verified on
+  "Takt Op. Destiny", episode 11, across 21:56 and the large ending segments
+  in 1080p without the previous OutOfMemoryError. Debug-only buffer telemetry
+  records sizes and positions without request URLs or credentials.
+  MPEG-TS HLS reads additionally wait for allocator space at twice the target
+  budget, with reads capped at 64 KiB. Waits are interruptible on seek/release;
+  paused playback may retain a full buffer. A stream unable to free samples
+  while playing fails after 30 seconds instead of waiting indefinitely.
+  This controls source reads, not every allocation in the extractor or HTTP.
+  The enhanced build passed the same heavy section again after seeking back,
+  completed episode 11 and resumed episode 12 in 1080p in the same process.
+  The read gate actually waited, with an observed allocator maximum of 48 MiB.
+  The cumulative build and 13 unit tests pass; the independent branch has its
+  own JUnit dependency and 6 passing tests. Topic commit `14e34f6c` is pushed
+  to the user's existing fork; earlier TV changes are excluded from this PR.
+- `fix/tv-skip-prompts-seeking` is based on `upstream/develop`, with its
+  checkout in `outputs/tv-skip-prompts-seeking`. Its upstream PR is
+  https://github.com/anilibria/anilibria-app/pull/310, targeting `develop`.
+  Latest topic commit `5fecc34b` is pushed to the user's existing fork.
+  Skip prompts and their timers are suppressed during Leanback seeking.
+  Confirming a position inside an opening/ending shows its prompt, including
+  when returning to an already watched range; cancelling a preview preserves
+  previous dismissals. The buttons use the original 48 dp end padding and 16 dp bottom
+  padding, placing them below the playback times without overlapping them.
+  The same changes are applied and committed to `tv-development`.
+  The cumulative debug APK is installed on the TV. Its 35 tests pass,
+  including 10 seek-state and 12 readiness/countdown tests; the independent branch's
+  22 tests also pass.
+  On episode 11 of Takt Op. Destiny, seeking to 02:46 preserves progress-bar
+  focus during preview and shows the opening prompt after confirmation, with
+  a visible gap before the time text. Ending state is covered by tests;
+  the TV's legacy API returns empty ending markers for this release.
+  Prompts wait for a rendered frame and READY after media changes and actual seeks.
+  No-op seeks keep the existing frame. A 250 ms fade completes before the five-second
+  countdown starts; pause, buffering and Watch focus freeze its remaining time.
+  Skip gains focus before the fade and appears highlighted from its first visible
+  frame; the animation end does not reclaim focus. Clicks wait for the fade to end.
+  When auto-skip is enabled, the (5) label also appears from the first visible frame;
+  only the countdown waits for the fade. See skip-timer-validation.md for TV evidence.
+  Prompts now fade out over 250 ms, with countdown/actions blocked immediately and
+  the current styling/text retained through the fade. A renewed prompt cancels
+  the old fade and resumes from the current alpha; media changes remove it immediately.
+  Both builds and the same 35/22 tests pass. The fade-out refinement is installed
+  and device-validated on episode 12: Watch dismisses with a smooth fade and focus
+  returns to the progress bar. A rapid seek confirmation cancels the previous fade
+  and preserves the newly shown prompt with its paused (5) label.
+  The new cumulative APK and report are under `outputs/tv-diagnostics/skip-hide*`
+  and `outputs/tv-diagnostics/AniLiberty-TV-skip-hide-debug.apk`.
+  This refinement was checked in a TV screen recording; see skip-focus-validation.md.
+  Prompt appearance no longer forcibly hides controls. Play/Pause is routed from
+  the prompt buttons, which are outside Leanback's grid. Jobs/animations are disposed
+  with the view. Verified episode 12 from 00:00, repeated seeks to zero, and episode 11
+  Watch focus while playing, pause, and countdown resumption. Debug-only safe events,
+  APK and validation report are saved under `outputs/tv-diagnostics/skip-lifecycle*`.
 - Keep each upstream PR limited to one fix or feature. Do not include the local
   debug setup or these workflow instructions in unrelated upstream PRs.
 - Before starting another change, inspect Git status, the current branch and
