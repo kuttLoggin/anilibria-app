@@ -89,8 +89,21 @@ class LibriaReleaseViewHolder(
             height =
                 binding.root.resources.displayMetrics.heightPixels - 1 // Шобы следующая строка подгрузилась при открытии
         }
+        val previousDetails = lastDetails
+        val actionsWereVisible = binding.rowReleaseActions.isVisible
         item.state?.also { bindState(it) }
         item.details?.also { bindDetails(it) }
+
+        val actionsReady = item.details?.actionsReady == true && item.state?.loadingProgress != true
+        binding.rowReleaseActions.isInvisible = !actionsReady
+        binding.rowReleaseRoot.isFocusable = !actionsReady
+        if (actionsReady && (!actionsWereVisible || previousDetails != item.details)) {
+            listOf(
+                binding.rowReleaseActionContinue,
+                binding.rowReleaseActionPlay,
+                binding.rowReleaseActionFavorite,
+            ).firstOrNull { it.isVisible }?.requestFocus()
+        }
     }
 
     private fun bindState(state: DetailsState) {
@@ -99,9 +112,6 @@ class LibriaReleaseViewHolder(
         }
 
         lastState = state
-        binding.rowReleaseRoot.isFocusable = state.loadingProgress
-
-        binding.rowReleaseActions.isInvisible = state.loadingProgress
         binding.rowReleaseImageCard.isInvisible = state.loadingProgress
 
         binding.rowReleaseLoadingProgress.isVisible = state.loadingProgress
@@ -147,12 +157,6 @@ class LibriaReleaseViewHolder(
             "Убрать из избранного"
         } else {
             "Добавить в избранное"
-        }
-
-        if (details.hasViewed) {
-            binding.rowReleaseActionContinue.requestFocus()
-        } else {
-            binding.rowReleaseActionPlay.requestFocus()
         }
 
         binding.rowReleaseImageCard.showImageUrl(details.image)
