@@ -153,7 +153,7 @@
         tools:visibility="visible" />
 
 
-    <ScrollView
+    <ru.radiationx.anilibria.ui.widget.DescriptionScrollView
         android:id="@+id/rowReleaseDescriptionCard"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -183,7 +183,7 @@
             android:textSize="14sp"
             tools:text="@tools:sample/lorem/random" />
 
-    </ScrollView>
+    </ru.radiationx.anilibria.ui.widget.DescriptionScrollView>
 
 
     <androidx.appcompat.widget.LinearLayoutCompat

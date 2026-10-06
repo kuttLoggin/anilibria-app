@@ -22,6 +22,15 @@ new fixes or features.
   to the first visible action after reaching the end of the description.
   Pressing Up closes the player controls on key release when no new focus
   target exists above; navigation within the controls remains available.
+  A local follow-up uses `DescriptionScrollView` to draw only complete text
+  lines at both scroll-window edges, including during scrolling. It is applied
+  to `tv-development` and the PR branch checkout in
+  `outputs/tv-controls-and-description`. Follow-up commit `97bf6320` is pushed
+  to the user's existing fork in PR #306; its description is updated.
+  Both TV builds pass and the cumulative 46 TV tests pass. The cumulative APK
+  is installed and checked on "Takt Op. Destiny" and "Steel Ball Run", including
+  the final description lines and focus transfer to actions. Evidence is in
+  `outputs/tv-diagnostics/description-validation.md`.
 - `fix/tv-otp-auth` contains only the authentication fix and regression
   tests. Its upstream PR is https://github.com/anilibria/anilibria-app/pull/304
   (replacing closed PR #303 after renaming the source branch),
