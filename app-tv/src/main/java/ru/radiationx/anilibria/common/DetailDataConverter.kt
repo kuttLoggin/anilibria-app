@@ -35,6 +35,7 @@ class DetailDataConverter @Inject constructor() {
             favoriteCount = NumberFormat.getNumberInstance().format(favoriteInfo.rating),
             hasFullHd = episodes.any { PlayerQuality.FULLHD in it.qualityInfo },
             isFavorite = favoriteInfo.isAdded,
+            actionsReady = isFull,
             hasEpisodes = episodes.isNotEmpty(),
             showPlayAction = playback.showPlayAction,
             continueText = playback.continueText,

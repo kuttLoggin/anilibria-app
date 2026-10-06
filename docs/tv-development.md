@@ -247,3 +247,30 @@ their checkouts change.
   outputs/tv-diagnostics/continue-labels-validation.md;
   final APK: outputs/tv-diagnostics/AniLiberty-TV-continue-labels-debug.apk.
   Russian PR description draft: outputs/pr-descriptions/tv-watched-progress.md.
+
+### fix/tv-release-actions-loading
+
+- Independent local branch from upstream/develop a188bfd5, checkout
+  outputs/tv-release-actions-loading, topic commit 6d20768d. No pending PR
+  dependency; it excludes watched-progress changes and local debug setup.
+  The branch is not pushed and no PR has been created.
+- Short list metadata previously revealed actions before full episode data:
+  Favorite appeared first, then moved when Watch/Continue was added.
+  The action row now starts invisible and is revealed only after full details
+  have been bound. Space is retained, and focus moves to the first visible action
+  after the row appears. A full release with no available episodes still reveals
+  Favorite; readiness does not depend on the playlist being nonempty.
+- Applied to tv-development. Both TV APK builds and unit-test tasks pass;
+  cumulative 75 TV tests, zero failures/errors. Upstream has no TV unit-test
+  sources, so the independent branch's test task reports NO-SOURCE.
+  This fix changes only app-tv; shared data/mobile have not changed.
+- TCL recording reproduces the initial Favorite-only frame on Fantasies of the
+  River Backwaters before the fix. The new cumulative APK shows the complete
+  Watch/Favorite/Other row together on first load and reopening. Princess Knight
+  shows Continue (00:02) without Watch; Takt Op. Destiny shows Continue (1 серия)
+  with Watch. Focus is correct in each case and Right reaches Favorite.
+  Blocked Oshi no Ko 3rd Season shows its reason and focuses Favorite after load.
+- Latest installed cumulative APK:
+  outputs/tv-diagnostics/AniLiberty-TV-release-actions-loading-debug.apk.
+  Evidence: outputs/tv-diagnostics/release-actions-loading-validation.md;
+  Russian PR draft: outputs/pr-descriptions/tv-release-actions-loading.md.
