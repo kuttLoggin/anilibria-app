@@ -108,9 +108,11 @@ new fixes or features.
   APK and validation report are saved under `outputs/tv-diagnostics/skip-lifecycle*`.
 - Keep each upstream PR limited to one fix or feature. Do not include the local
   debug setup or these workflow instructions in unrelated upstream PRs.
-- `feature/tv-poster-status` is a local independent feature branch based on
+- `feature/tv-poster-status` is an independent feature branch based on
   `upstream/develop` (`a188bfd5`), with its checkout in `outputs/tv-poster-status`.
-  No PR has been created or branch pushed. It makes blocked release posters
+  Its upstream PR is https://github.com/anilibria/anilibria-app/pull/311,
+  targeting `develop`. Topic commit `25d1c3c8` is pushed to the user's existing
+  fork; previous TV fixes and local debug setup are excluded. It makes blocked release posters
   grayscale and shows the block reason instead of list metadata, including
   Continue Watching. Favorite releases show a translucent top-right star except
   in Main's favorite updates and Watching's Favorites rows. The release detail
@@ -131,7 +133,7 @@ new fixes or features.
   back and reopening twice. Four flow tests cover stale responses, reopening,
   and clearing local overrides. The installed corrected APK is also saved at
   `outputs/tv-diagnostics/AniLiberty-TV-favorite-card-debug.apk`.
-  Await the user's testing before publishing a PR.
+  The user authorized publication after local/device testing; PR #311 is OPEN.
 - Before starting another change, inspect Git status, the current branch and
   the status of preceding PRs. Do not reset the cumulative branch to upstream
   or drop preceding changes merely to prepare a clean PR.
