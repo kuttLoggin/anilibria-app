@@ -141,15 +141,15 @@ class LibriaReleaseViewHolder(
         binding.rowReleaseHQMarker.isVisible = details.hasFullHd
 
         binding.rowReleaseActionPlay.isVisible = details.hasEpisodes
-        binding.rowReleaseActionContinue.isVisible = details.hasViewed
-        binding.rowReleaseActionOther.isVisible = details.hasEpisodes || details.hasViewed
+        binding.rowReleaseActionContinue.isVisible = details.hasProgress
+        binding.rowReleaseActionOther.isVisible = details.hasEpisodes || details.hasProgress
         binding.rowReleaseActionFavorite.text = if (details.isFavorite) {
             "Убрать из избранного"
         } else {
             "Добавить в избранное"
         }
 
-        if (details.hasViewed) {
+        if (details.hasProgress) {
             binding.rowReleaseActionContinue.requestFocus()
         } else {
             binding.rowReleaseActionPlay.requestFocus()

@@ -83,7 +83,8 @@ class DetailHeaderViewModel @Inject constructor(
 
     fun onContinueClick() {
         viewModelScope.launch {
-            releaseInteractor.getAccesses(releaseId).maxByOrNull { it.lastAccessRaw }?.also {
+            releaseInteractor.getAccesses(releaseId).filter { it.hasProgress }
+                .maxByOrNull { it.lastAccessRaw }?.also {
                 router.navigateTo(PlayerScreen(releaseId, it.id))
             }
         }
@@ -97,7 +98,8 @@ class DetailHeaderViewModel @Inject constructor(
         } else {
             viewModelScope.launch {
                 val episodeId =
-                    releaseInteractor.getAccesses(releaseId).maxByOrNull { it.lastAccessRaw }?.id
+                    releaseInteractor.getAccesses(releaseId).filter { it.hasProgress }
+                        .maxByOrNull { it.lastAccessRaw }?.id
                 guidedRouter.open(PlayerEpisodesGuidedScreen(releaseId, episodeId))
             }
         }
