@@ -142,10 +142,10 @@ class LibriaReleaseViewHolder(
         )
         binding.rowReleaseHQMarker.isVisible = details.hasFullHd
 
-        binding.rowReleaseActionPlay.isVisible = details.hasEpisodes
-        binding.rowReleaseActionContinue.isVisible = details.hasProgress || details.allEpisodesViewed
-        binding.rowReleaseActionContinue.text = if (details.allEpisodesViewed) "Заново" else "Продолжить"
-        binding.rowReleaseActionOther.isVisible = details.hasEpisodes || details.hasProgress
+        binding.rowReleaseActionPlay.isVisible = details.showPlayAction
+        binding.rowReleaseActionContinue.isVisible = details.continueText != null
+        binding.rowReleaseActionContinue.text = details.continueText.orEmpty()
+        binding.rowReleaseActionOther.isVisible = details.hasEpisodes || details.continueText != null
         binding.rowReleaseActionFavorite.text = if (details.isFavorite) {
             "Убрать из избранного"
         } else {
@@ -153,8 +153,8 @@ class LibriaReleaseViewHolder(
         }
 
         val firstAction = when {
-            details.hasProgress || details.allEpisodesViewed -> binding.rowReleaseActionContinue
-            details.hasEpisodes -> binding.rowReleaseActionPlay
+            details.continueText != null -> binding.rowReleaseActionContinue
+            details.showPlayAction -> binding.rowReleaseActionPlay
             else -> binding.rowReleaseActionFavorite
         }
         binding.rowReleaseDescriptionCard.nextFocusDownId = firstAction.id

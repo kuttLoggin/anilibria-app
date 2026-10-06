@@ -15,8 +15,8 @@ data class LibriaDetails(
     val hasFullHd: Boolean,
     val isFavorite: Boolean,
     val hasEpisodes: Boolean,
-    val hasProgress: Boolean,
-    val allEpisodesViewed: Boolean,
+    val showPlayAction: Boolean,
+    val continueText: String?,
     val hasWebPlayer: Boolean
 )
 

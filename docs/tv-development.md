@@ -200,7 +200,7 @@ their checkouts change.
 ### feature/tv-watched-progress
 
 - Local independent branch from current upstream/develop a188bfd5, checkout
-  outputs/tv-watched-progress, topic commits e870c2ff and bfaf75f7. No pending PR dependency.
+  outputs/tv-watched-progress, topic commits e870c2ff, bfaf75f7 and 7c1683b1. No pending PR dependency.
   The user requested preparation for a PR but explicitly withheld PR creation;
   the branch is not pushed and no PR exists.
 - TV separates saved progress from isViewed. A valid positive ending start takes
@@ -209,7 +209,14 @@ their checkouts change.
   Natural completion also counts. Confirmed seeks count; Leanback previews do not.
   Rewinding before the threshold clears the flag. Opening a watched episode
   resets its seek and flag before preparing video; unfinished episodes resume.
-- Continue controls and stopped-position descriptions use nonzero seek.
+- Continue resumes the latest unfinished episode, or advances from a watched
+  episode to the next unviewed one, wrapping to an earlier gap if necessary.
+  Its caption is "Продолжить (12:34)" for one available episode,
+  "Продолжить (1 серия - 12:34)" for an unfinished episode in a multi-episode
+  release, and "Продолжить (2 серия)" for an unstarted next episode.
+  With one available episode, "Смотреть" is hidden while Continue or Restart
+  is available, and returns immediately after history is cleared.
+  Stopped-position descriptions use nonzero seek.
   Both TV episode menus show a check icon for isViewed; reactive updates preserve
   the selected row. Manual mark-all adds checks without inventing progress.
   When all available episodes are marked, the card shows "Заново", opening the
@@ -218,7 +225,9 @@ their checkouts change.
   Mobile retains its existing automatic flag behavior through setAccessSeek;
   TV uses the new setPlaybackProgress contract.
 - Changes are also applied to tv-development. Both TV and mobile builds pass.
-  Cumulative: 66 TV and 15 data tests. Independent: 20 TV and 8 data tests.
+  Cumulative: 75 TV and 15 data tests. Independent: 29 TV and 8 data tests.
+  Both TV builds/tests were repeated for the caption/action refinement;
+  shared data and mobile code have not changed since their previous checks.
   The final cumulative APK is installed on Smart TV Pro.
 - Takt Op. Destiny: all 12 marks show "Заново"; it opens episode 1 at zero.
   At 20:05 out of 23:41 the flag is false, at 20:19 true. A backward preview
@@ -228,6 +237,13 @@ their checkouts change.
   Changing to 720p at 21:25 preserves progress and true. History was restored and
   compared after restart and final APK installation. Ending-start behavior is
   unit-tested; a real TV episode with valid ending markers was not checked.
-- Evidence: outputs/tv-diagnostics/watched-restart-validation.md;
-  final APK: outputs/tv-diagnostics/AniLiberty-TV-watched-restart-debug.apk.
+- TCL also verified the caption refinement: Takt Op. Destiny resumes episode 1
+  at 12:34 and advances from watched episode 1 to unstarted episode 2 at zero.
+  Kashita Maryoku (release 10322, one available episode) shows the time-only
+  Continue caption or Restart without Watch; clearing history restores Watch.
+  Focus skips the hidden action, and visible buttons fit in one row.
+  The pre-test history was restored and compared in full after restarting.
+- Evidence: outputs/tv-diagnostics/watched-restart-validation.md and
+  outputs/tv-diagnostics/continue-labels-validation.md;
+  final APK: outputs/tv-diagnostics/AniLiberty-TV-continue-labels-debug.apk.
   Russian PR description draft: outputs/pr-descriptions/tv-watched-progress.md.
