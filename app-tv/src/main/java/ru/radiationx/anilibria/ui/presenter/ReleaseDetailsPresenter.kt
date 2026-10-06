@@ -79,16 +79,12 @@ class LibriaReleaseViewHolder(
         binding.rowReleaseActionFavorite.setOnClickListener { favoriteClickListener.invoke() }
         binding.rowReleaseDescriptionCard.setOnClickListener { descriptionClickListener.invoke() }
         binding.root.updateLayoutParams {
-            height =
-                binding.root.resources.displayMetrics.heightPixels - 1 // Шобы следующая строка подгрузилась при открытии
+            // Keep lower rows outside the first layout while the header is loading.
+            height = binding.root.resources.displayMetrics.heightPixels
         }
     }
 
     fun bind(item: LibriaDetailsRow) {
-        binding.root.updateLayoutParams {
-            height =
-                binding.root.resources.displayMetrics.heightPixels - 1 // Шобы следующая строка подгрузилась при открытии
-        }
         val previousDetails = lastDetails
         val actionsWereVisible = binding.rowReleaseActions.isVisible
         item.state?.also { bindState(it) }
