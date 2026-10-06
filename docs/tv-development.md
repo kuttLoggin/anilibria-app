@@ -252,7 +252,7 @@ their checkouts change.
 ### fix/tv-release-actions-loading
 
 - Independent local branch from upstream/develop a188bfd5, checkout
-  outputs/tv-release-actions-loading, topic commit 6d20768d. No pending PR
+  outputs/tv-release-actions-loading, topic commits 6d20768d and dc75fb61. No pending PR
   dependency; it excludes watched-progress changes and local debug setup.
   The user authorized publication on 2026-10-07. The branch is pushed to the
   existing kuttLoggin/anilibria-app fork; upstream PR
@@ -267,6 +267,11 @@ their checkouts change.
   have been bound. Space is retained, and focus moves to the first visible action
   after the row appears. A full release with no available episodes still reveals
   Favorite; readiness does not depend on the playlist being nonempty.
+  The header now publishes only full release data with episode accesses:
+  title, metadata, FullHD, favorite count, status and description are bound
+  together. The existing loader remains until that data arrives; cached full
+  releases are reused on reopening. This fixes the description shifting when
+  the quality/status fields appeared after an initial short-list snapshot.
 - Applied to tv-development. Both TV APK builds and unit-test tasks pass;
   cumulative 75 TV tests, zero failures/errors. Upstream has no TV unit-test
   sources, so the independent branch's test task reports NO-SOURCE.
@@ -277,7 +282,14 @@ their checkouts change.
   shows Continue (00:02) without Watch; Takt Op. Destiny shows Continue (1 серия)
   with Watch. Focus is correct in each case and Right reaches Favorite.
   Blocked Oshi no Ko 3rd Season shows its reason and focuses Favorite after load.
+  After the metadata refinement both TV builds/tasks pass again, with the same
+  75 cumulative tests. A new cumulative APK is installed. Recordings on Fantasies
+  of the River Backwaters and Takt Op. Destiny show metadata/status/description
+  appearing together on first load; reopening, focus and the blocked release
+  were also rechecked. Earlier playback scenarios were not rerun for this
+  header-only change.
 - Latest installed cumulative APK:
-  outputs/tv-diagnostics/AniLiberty-TV-release-actions-loading-debug.apk.
-  Evidence: outputs/tv-diagnostics/release-actions-loading-validation.md;
+  outputs/tv-diagnostics/AniLiberty-TV-release-content-loading-debug.apk.
+  Evidence: outputs/tv-diagnostics/release-actions-loading-validation.md and
+  outputs/tv-diagnostics/release-content-loading-validation.md;
   Russian PR draft: outputs/pr-descriptions/tv-release-actions-loading.md.
