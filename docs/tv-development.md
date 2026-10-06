@@ -252,7 +252,7 @@ their checkouts change.
 ### fix/tv-release-actions-loading
 
 - Independent local branch from upstream/develop a188bfd5, checkout
-  outputs/tv-release-actions-loading, topic commits 6d20768d and dc75fb61. No pending PR
+  outputs/tv-release-actions-loading, topic commits 6d20768d, dc75fb61 and b0d07359. No pending PR
   dependency; it excludes watched-progress changes and local debug setup.
   The user authorized publication on 2026-10-07. The branch is pushed to the
   existing kuttLoggin/anilibria-app fork; upstream PR
@@ -272,6 +272,17 @@ their checkouts change.
   together. The existing loader remains until that data arrives; cached full
   releases are reused on reopening. This fixes the description shifting when
   the quality/status fields appeared after an initial short-list snapshot.
+- Header selection now ignores empty image URLs, reuses the standard muted-color
+  cache and avoids duplicate background requests within the header. Its height
+  fills the screen instead of preloading the lower row by one pixel; the redundant
+  height assignment on every bind is removed. DetailFragment disables row item
+  animations to avoid creating offscreen cards during initial data updates.
+  This follow-up is included in PR #313 and tv-development.
+  Both builds and the cumulative 75 tests pass. The final debug APK is installed;
+  cold/repeated opening, recommendation navigation and return to the header are
+  verified on TCL. Cold debug header inflation/JIT still cause a measurable pause;
+  no claim of eliminating all jank. Evidence: outputs/tv-diagnostics/
+  release-background-validation.md; APK: AniLiberty-TV-release-background-debug.apk.
 - Applied to tv-development. Both TV APK builds and unit-test tasks pass;
   cumulative 75 TV tests, zero failures/errors. Upstream has no TV unit-test
   sources, so the independent branch's test task reports NO-SOURCE.

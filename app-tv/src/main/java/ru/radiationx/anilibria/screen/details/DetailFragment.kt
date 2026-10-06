@@ -45,6 +45,8 @@ class DetailFragment : RowsSupportFragment() {
 
     private val backgroundManager by inject<GradientBackgroundManager>()
 
+    private var headerBackgroundImage: String? = null
+
     private val argExtra by lazy {
         DetailExtra(id = getExtraNotNull(ARG_ID))
     }
@@ -83,6 +85,10 @@ class DetailFragment : RowsSupportFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        headerBackgroundImage = null
+        // Row updates must not pre-bind offscreen cards during the header transition.
+        verticalGridView?.itemAnimator = null
+
         viewLifecycleOwner.lifecycle.addObserver(detailsViewModel)
         viewLifecycleOwner.lifecycle.addObserver(headerViewModel)
         viewLifecycleOwner.lifecycle.addObserver(relatedViewModel)
@@ -102,9 +108,15 @@ class DetailFragment : RowsSupportFragment() {
 
         setOnItemViewSelectedListener { _, item, rowViewHolder, row ->
             if (row is ListRow) {
+                headerBackgroundImage = null
                 backgroundManager.applyCard(item)
             } else if (row is LibriaDetailsRow) {
-                applyImage(row.details?.image.orEmpty())
+                row.details?.image?.takeIf { it.isNotBlank() }?.let { image ->
+                    if (headerBackgroundImage != image) {
+                        headerBackgroundImage = image
+                        applyImage(image)
+                    }
+                }
             }
             if (rowViewHolder is CustomListRowViewHolder) {
                 when (item) {
@@ -172,13 +184,13 @@ class DetailFragment : RowsSupportFragment() {
     }
 
     private fun applyImage(image: String) {
-        backgroundManager.applyImage(image, colorSelector = { null }) {
+        backgroundManager.applyImage(image, colorModifier = {
             val hslColor = FloatArray(3)
             ColorUtils.colorToHSL(it, hslColor)
             hslColor[1] = (hslColor[1] + 0.05f).coerceAtMost(1.0f)
             hslColor[2] = (hslColor[2] + 0.05f).coerceAtMost(1.0f)
             ColorUtils.HSLToColor(hslColor)
-        }
+        })
     }
 
 }
