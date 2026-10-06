@@ -201,8 +201,9 @@ their checkouts change.
 
 - Local independent branch from current upstream/develop a188bfd5, checkout
   outputs/tv-watched-progress, topic commits e870c2ff, bfaf75f7 and 7c1683b1. No pending PR dependency.
-  The user requested preparation for a PR but explicitly withheld PR creation;
-  the branch is not pushed and no PR exists.
+  The user authorized publication on 2026-10-07. The branch is pushed to the
+  existing kuttLoggin/anilibria-app fork; upstream PR
+  https://github.com/anilibria/anilibria-app/pull/312 is OPEN, targeting develop.
 - TV separates saved progress from isViewed. A valid positive ending start takes
   priority; the flag remains true from that start through the end. Otherwise 85%
   of duration counts, following the public website's TimecodeController.
@@ -253,7 +254,13 @@ their checkouts change.
 - Independent local branch from upstream/develop a188bfd5, checkout
   outputs/tv-release-actions-loading, topic commit 6d20768d. No pending PR
   dependency; it excludes watched-progress changes and local debug setup.
-  The branch is not pushed and no PR has been created.
+  The user authorized publication on 2026-10-07. The branch is pushed to the
+  existing kuttLoggin/anilibria-app fork; upstream PR
+  https://github.com/anilibria/anilibria-app/pull/313 is OPEN, targeting develop.
+  PRs #312 and #313 are functionally independent but overlap in
+  ReleaseDetailsPresenter focus selection; merging both topic branches reports
+  a content conflict there. Each PR description identifies this overlap.
+  Their integrated version is already verified in tv-development.
 - Short list metadata previously revealed actions before full episode data:
   Favorite appeared first, then moved when Watch/Continue was added.
   The action row now starts invisible and is revealed only after full details
