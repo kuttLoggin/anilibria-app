@@ -200,27 +200,34 @@ their checkouts change.
 ### feature/tv-watched-progress
 
 - Local independent branch from current upstream/develop a188bfd5, checkout
-  outputs/tv-watched-progress, topic commit e870c2ff. No pending PR dependency.
+  outputs/tv-watched-progress, topic commits e870c2ff and bfaf75f7. No pending PR dependency.
   The user requested preparation for a PR but explicitly withheld PR creation;
   the branch is not pushed and no PR exists.
-- TV separates saved progress from isViewed. A valid ending range takes priority;
-  otherwise the final five minutes count. Natural completion also counts.
-  Confirmed seeks count; Leanback preview positions do not. Viewed flags survive
-  rewinding until a manual history reset. Previous flags are preserved.
+- TV separates saved progress from isViewed. A valid positive ending start takes
+  priority; the flag remains true from that start through the end. Otherwise 85%
+  of duration counts, following the public website's TimecodeController.
+  Natural completion also counts. Confirmed seeks count; Leanback previews do not.
+  Rewinding before the threshold clears the flag. Opening a watched episode
+  resets its seek and flag before preparing video; unfinished episodes resume.
 - Continue controls and stopped-position descriptions use nonzero seek.
   Both TV episode menus show a check icon for isViewed; reactive updates preserve
   the selected row. Manual mark-all adds checks without inventing progress.
+  When all available episodes are marked, the card shows "Заново", opening the
+  first episode from zero. Other flags remain until those episodes are restarted.
+  Quality changes preserve the current position and flag.
   Mobile retains its existing automatic flag behavior through setAccessSeek;
   TV uses the new setPlaybackProgress contract.
 - Changes are also applied to tv-development. Both TV and mobile builds pass.
-  Cumulative: 55 TV and 12 data tests. Independent: 9 TV and 5 data tests.
+  Cumulative: 66 TV and 15 data tests. Independent: 20 TV and 8 data tests.
   The final cumulative APK is installed on Smart TV Pro.
-- Takt Op. Destiny episode 11: no check at 00:19/17:47, a check at 18:58
-  out of 23:41, cancelled preview at 19:15 leaves the flag false, rewind to
-  01:36 preserves true. Manual mark-all produces 12 checks with zero seek
-  and no Continue button. Original history was restored and compared after restart.
-  Real ending timecodes and natural completion are unit-tested; separate device
-  checks of those two scenarios were not performed in this session.
-- Evidence: outputs/tv-diagnostics/watched-progress-validation.md;
-  final APK: outputs/tv-diagnostics/AniLiberty-TV-watched-progress-debug.apk.
+- Takt Op. Destiny: all 12 marks show "Заново"; it opens episode 1 at zero.
+  At 20:05 out of 23:41 the flag is false, at 20:19 true. A backward preview
+  preserves true; confirming 19:36 clears it and Continue resumes at 19:36.
+  Selecting watched episode 2 resets its saved 15:00 to zero. Natural completion
+  of episode 2 marks it and opens watched episode 3 at zero with its flag cleared.
+  Changing to 720p at 21:25 preserves progress and true. History was restored and
+  compared after restart and final APK installation. Ending-start behavior is
+  unit-tested; a real TV episode with valid ending markers was not checked.
+- Evidence: outputs/tv-diagnostics/watched-restart-validation.md;
+  final APK: outputs/tv-diagnostics/AniLiberty-TV-watched-restart-debug.apk.
   Russian PR description draft: outputs/pr-descriptions/tv-watched-progress.md.

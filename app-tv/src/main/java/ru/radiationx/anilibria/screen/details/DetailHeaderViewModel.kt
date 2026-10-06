@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import ru.radiationx.anilibria.common.DetailDataConverter
 import ru.radiationx.anilibria.common.DetailsState
 import ru.radiationx.anilibria.common.LibriaDetails
+import ru.radiationx.anilibria.common.ReleasePlaybackState
 import ru.radiationx.anilibria.common.fragment.GuidedRouter
 import ru.radiationx.anilibria.screen.AuthGuidedScreen
 import ru.radiationx.anilibria.screen.DetailOtherGuidedScreen
@@ -83,9 +84,12 @@ class DetailHeaderViewModel @Inject constructor(
 
     fun onContinueClick() {
         viewModelScope.launch {
-            releaseInteractor.getAccesses(releaseId).filter { it.hasProgress }
-                .maxByOrNull { it.lastAccessRaw }?.also {
-                router.navigateTo(PlayerScreen(releaseId, it.id))
+            val release = currentRelease ?: return@launch
+            val playback = ReleasePlaybackState.resolve(
+                release.episodes.asReversed().map { it.id }, releaseInteractor.getAccesses(releaseId)
+            )
+            playback.continueEpisodeId?.also {
+                router.navigateTo(PlayerScreen(releaseId, it, restart = playback.allEpisodesViewed))
             }
         }
     }

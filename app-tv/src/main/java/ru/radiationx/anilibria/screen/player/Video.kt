@@ -10,4 +10,5 @@ data class Video(
     val subtitle: String,
     val skips: PlayerSkips?,
     val episodeId: EpisodeId,
+    val playbackId: Long,
 )

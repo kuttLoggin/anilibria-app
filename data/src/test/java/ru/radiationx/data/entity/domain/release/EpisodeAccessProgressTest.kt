@@ -17,21 +17,21 @@ class EpisodeAccessProgressTest {
         assertEquals(123L, access.lastAccessRaw)
     }
 
-    @Test fun `rewinding a viewed episode keeps the completion mark`() {
+    @Test fun `rewinding a viewed episode removes the completion mark`() {
         val access = EpisodeAccess(id, 1_400_000L, true, 1L).withPlaybackProgress(1000L, 2L, false)
-        assertTrue(access.isViewed)
+        assertFalse(access.isViewed)
         assertEquals(1000L, access.seek)
     }
 
     @Test fun `manually viewed episode has no playback progress`() {
         val access = EpisodeAccess.createDefault(id).copy(isViewed = true)
         assertFalse(access.hasProgress)
-        assertTrue(access.withPlaybackProgress(1000L, 2L, false).isViewed)
+        assertFalse(access.withPlaybackProgress(1000L, 2L, false).isViewed)
     }
 
-    @Test fun `restarting a viewed episode preserves its mark`() {
+    @Test fun `restarting a viewed episode removes its mark`() {
         val access = EpisodeAccess(id, 1_400_000L, true, 1L).withPlaybackProgress(0L, 2L, false)
-        assertTrue(access.isViewed)
+        assertFalse(access.isViewed)
         assertFalse(access.hasProgress)
     }
 
@@ -40,5 +40,23 @@ class EpisodeAccessProgressTest {
         assertFalse(reset.hasProgress)
         assertFalse(reset.isViewed)
         assertEquals(0L, reset.lastAccessRaw)
+    }
+
+    @Test fun `opening a watched episode starts from zero`() {
+        val started = EpisodeAccess(id, 1_400_000L, true, 1L).forPlaybackStart(2L)
+        assertFalse(started.isViewed)
+        assertEquals(0L, started.seek)
+        assertEquals(2L, started.lastAccessRaw)
+    }
+
+    @Test fun `opening an unfinished episode resumes its position`() {
+        val unfinished = EpisodeAccess(id, 90_000L, false, 1L)
+        assertEquals(unfinished, unfinished.forPlaybackStart(2L))
+    }
+
+    @Test fun `explicit restart clears unfinished progress as well`() {
+        val started = EpisodeAccess(id, 90_000L, false, 1L).forPlaybackStart(2L, restart = true)
+        assertFalse(started.isViewed)
+        assertEquals(0L, started.seek)
     }
 }
