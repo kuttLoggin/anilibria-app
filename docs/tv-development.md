@@ -252,7 +252,8 @@ their checkouts change.
 ### fix/tv-release-actions-loading
 
 - Independent local branch from upstream/develop a188bfd5, checkout
-  outputs/tv-release-actions-loading, topic commits 6d20768d, dc75fb61 and b0d07359. No pending PR
+  outputs/tv-release-actions-loading, topic commits 6d20768d, dc75fb61,
+  b0d07359 and 93ebde45. No pending PR
   dependency; it excludes watched-progress changes and local debug setup.
   The user authorized publication on 2026-10-07. The branch is pushed to the
   existing kuttLoggin/anilibria-app fork; upstream PR
@@ -283,6 +284,17 @@ their checkouts change.
   verified on TCL. Cold debug header inflation/JIT still cause a measurable pause;
   no claim of eliminating all jank. Evidence: outputs/tv-diagnostics/
   release-background-validation.md; APK: AniLiberty-TV-release-background-debug.apk.
+- Initial and update spinners now wait 250 ms before appearing. A ready header
+  is displayed immediately; callbacks are cancelled on completion, detach and
+  unbind. Visible spinners hide immediately without a minimum display duration.
+  Both TV builds and the cumulative 75 tests pass. The cumulative APK is installed
+  on TCL; cold/repeated opening of Fantasies of the River Backwaters and opening
+  Sakurasou show no spinner flash. Artificial slow-network and pending-callback
+  cancellation before the threshold were not device-tested.
+  The down arrow also starts invisible and appears with the ready action row.
+  Both builds and 75 cumulative tests pass after the arrow change; a new APK is
+  installed. Cold/repeated opening and Down/Up navigation are checked on TCL.
+  Evidence: outputs/tv-diagnostics/loader-delay-validation.md.
 - Applied to tv-development. Both TV APK builds and unit-test tasks pass;
   cumulative 75 TV tests, zero failures/errors. Upstream has no TV unit-test
   sources, so the independent branch's test task reports NO-SOURCE.
@@ -300,7 +312,7 @@ their checkouts change.
   were also rechecked. Earlier playback scenarios were not rerun for this
   header-only change.
 - Latest installed cumulative APK:
-  outputs/tv-diagnostics/AniLiberty-TV-release-content-loading-debug.apk.
+  outputs/tv-diagnostics/AniLiberty-TV-loader-delay-arrow-debug.apk.
   Evidence: outputs/tv-diagnostics/release-actions-loading-validation.md and
   outputs/tv-diagnostics/release-content-loading-validation.md;
   Russian PR draft: outputs/pr-descriptions/tv-release-actions-loading.md.

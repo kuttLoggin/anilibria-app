@@ -54,6 +54,11 @@ class ReleaseDetailsPresenter(
         vh.bind(item)
     }
 
+    override fun onUnbindRowViewHolder(vh: ViewHolder) {
+        (vh as LibriaReleaseViewHolder).unbind()
+        super.onUnbindRowViewHolder(vh)
+    }
+
 }
 
 class LibriaReleaseViewHolder(
@@ -71,6 +76,9 @@ class LibriaReleaseViewHolder(
 
     private var lastState: DetailsState? = null
     private var lastDetails: LibriaDetails? = null
+
+    private val loadingIndicator = DelayedProgressIndicator(binding.rowReleaseLoadingProgress)
+    private val updateIndicator = DelayedProgressIndicator(binding.rowReleaseUpdateProgress)
 
     init {
         binding.rowReleaseActionContinue.setOnClickListener { continueClickListener.invoke() }
@@ -94,6 +102,7 @@ class LibriaReleaseViewHolder(
 
         val actionsReady = item.details?.actionsReady == true && item.state?.loadingProgress != true
         binding.rowReleaseActions.isInvisible = !actionsReady
+        binding.rowReleaseArrow.isInvisible = !actionsReady
         binding.rowReleaseRoot.isFocusable = !actionsReady
         if (actionsReady && (!actionsWereVisible || previousDetails != item.details)) {
             listOf(
@@ -112,8 +121,14 @@ class LibriaReleaseViewHolder(
         lastState = state
         binding.rowReleaseImageCard.isInvisible = state.loadingProgress
 
-        binding.rowReleaseLoadingProgress.isVisible = state.loadingProgress
-        binding.rowReleaseUpdateProgress.isVisible = state.updateProgress && !state.loadingProgress
+        loadingIndicator.setLoading(state.loadingProgress)
+        updateIndicator.setLoading(state.updateProgress && !state.loadingProgress)
+    }
+
+    fun unbind() {
+        loadingIndicator.setLoading(false)
+        updateIndicator.setLoading(false)
+        lastState = null
     }
 
     private fun bindDetails(details: LibriaDetails) {
@@ -165,5 +180,48 @@ class LibriaReleaseViewHolder(
         }
         binding.rowReleaseDescriptionCard.nextFocusDownId = firstAction.id
         binding.rowReleaseImageCard.showImageUrl(details.image)
+    }
+}
+
+/** Short loads never reveal a spinner; completed loads hide it immediately. */
+private class DelayedProgressIndicator(private val view: View) : View.OnAttachStateChangeListener {
+
+    private var loading = false
+    private var showPending = false
+    private val showIndicator = Runnable {
+        showPending = false
+        if (loading && view.isAttachedToWindow) {
+            view.isInvisible = false
+        }
+    }
+
+    init {
+        view.isInvisible = true
+        view.addOnAttachStateChangeListener(this)
+    }
+
+    fun setLoading(loading: Boolean) {
+        this.loading = loading
+        if (!loading) {
+            cancelShow()
+            view.isInvisible = true
+        } else if (view.isAttachedToWindow && !view.isVisible && !showPending) {
+            showPending = true
+            view.postDelayed(showIndicator, 250L)
+        }
+    }
+
+    override fun onViewAttachedToWindow(v: View) {
+        setLoading(loading)
+    }
+
+    override fun onViewDetachedFromWindow(v: View) {
+        cancelShow()
+        view.isInvisible = true
+    }
+
+    private fun cancelShow() {
+        view.removeCallbacks(showIndicator)
+        showPending = false
     }
 }
