@@ -1,6 +1,7 @@
 package ru.radiationx.anilibria.screen.player
 
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -45,14 +46,18 @@ class PlayerViewModel @Inject constructor(
     private var currentDuration = 0L
     private var lastProgressSavedAt = 0L
     private var watchThresholdReached = false
+    private var episodeReady = false
+    private var episodeJob: Job? = null
+    private var videoJob: Job? = null
+    private var videoGeneration = 0L
 
     fun onPlaybackProgress(episodeId: EpisodeId, position: Long, duration: Long) {
         val episode = currentEpisode ?: return
-        if (episode.id != episodeId || position <= 0L) return
+        if (!episodeReady || episode.id != episodeId || position < 0L) return
         if (duration > 0L) currentDuration = duration
-        val viewed = EpisodeWatchPolicy.isViewed(position, currentDuration, episode.skips?.ending)
+        val viewed = EpisodeWatchPolicy.isViewed(position, currentDuration, episode.skips?.ending?.start)
         val now = System.currentTimeMillis()
-        if ((viewed && !watchThresholdReached) || now - lastProgressSavedAt >= 10_000L) {
+        if (viewed != watchThresholdReached || now - lastProgressSavedAt >= 10_000L) {
             saveEpisode(position)
         }
     }
@@ -99,7 +104,7 @@ class PlayerViewModel @Inject constructor(
                 val episode = currentEpisodes
                     .firstOrNull { it.id == episodeId }
                     ?: currentEpisodes.firstOrNull()
-                episode?.also { playEpisode(it) }
+                episode?.also { playEpisode(it, restart = argExtra.restart) }
             }.onFailure {
 
             }
@@ -205,26 +210,33 @@ class PlayerViewModel @Inject constructor(
 
     private fun saveEpisode(position: Long, ended: Boolean = false) {
         val episode = currentEpisode ?: return
-        if (position < 0) {
+        if (!episodeReady || videoData.value?.episodeId != episode.id || position < 0L ||
+            (currentDuration <= 0L && !ended)
+        ) {
             return
         }
-        val viewed = EpisodeWatchPolicy.isViewed(position, currentDuration, episode.skips?.ending, ended)
-        watchThresholdReached = watchThresholdReached || viewed
+        val viewed = EpisodeWatchPolicy.isViewed(position, currentDuration, episode.skips?.ending?.start, ended)
+        watchThresholdReached = viewed
         lastProgressSavedAt = System.currentTimeMillis()
         viewModelScope.launch {
             releaseInteractor.setPlaybackProgress(episode.id, position, viewed)
         }
     }
 
-    private fun playEpisode(episode: Episode, force: Boolean = false) {
+    private fun playEpisode(episode: Episode, force: Boolean = false, restart: Boolean = false) {
+        episodeJob?.cancel()
+        videoJob?.cancel()
+        episodeReady = false
         currentEpisode = episode
         currentComplete = null
         currentDuration = 0L
         lastProgressSavedAt = 0L
         watchThresholdReached = false
-        updateQuality()
-        updateEpisode(force)
-        viewModelScope.launch {
+        episodeJob = viewModelScope.launch {
+            releaseInteractor.startPlayback(episode.id, restart)
+            episodeReady = true
+            updateQuality()
+            updateEpisode(force)
             historyRepository.putReleaseId(episode.id.releaseId)
         }
     }
@@ -235,10 +247,12 @@ class PlayerViewModel @Inject constructor(
     }
 
     private fun updateEpisode(force: Boolean = false) {
+        if (!episodeReady) return
         val release = getCurrentRelease() ?: return
         val episode = currentEpisode ?: return
         val quality = currentQuality ?: return
-        viewModelScope.launch {
+        videoJob?.cancel()
+        videoJob = viewModelScope.launch {
             val newUrl = episode.qualityInfo.getSafeUrlFor(quality)
             val access = releaseInteractor.getAccess(episode.id)
             val newVideo = Video(
@@ -248,8 +262,10 @@ class PlayerViewModel @Inject constructor(
                 subtitle = episode.title.orEmpty(),
                 skips = episode.skips,
                 episodeId = episode.id,
+                playbackId = videoGeneration + 1,
             )
-            if (force || videoData.value?.url != newVideo.url) {
+            if (force || videoData.value?.url != newVideo.url || videoData.value?.episodeId != episode.id) {
+                videoGeneration++
                 videoData.value = newVideo
             }
         }

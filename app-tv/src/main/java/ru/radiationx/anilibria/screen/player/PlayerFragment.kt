@@ -26,20 +26,24 @@ class PlayerFragment : BasePlayerFragment() {
 
         private const val ARG_RELEASE_ID = "release id"
         private const val ARG_EPISODE_ID = "episode id"
+        private const val ARG_RESTART = "restart"
 
         fun newInstance(
             releaseId: ReleaseId,
             episodeId: EpisodeId?,
+            restart: Boolean = false,
         ): PlayerFragment = PlayerFragment().putExtra {
             putParcelable(ARG_RELEASE_ID, releaseId)
             putParcelable(ARG_EPISODE_ID, episodeId)
+            putBoolean(ARG_RESTART, restart)
         }
     }
 
     private val viewModel by viewModel<PlayerViewModel> {
         PlayerExtra(
             releaseId = getExtraNotNull(ARG_RELEASE_ID),
-            episodeId = getExtra(ARG_EPISODE_ID)
+            episodeId = getExtra(ARG_EPISODE_ID),
+            restart = arguments?.getBoolean(ARG_RESTART) ?: false,
         )
     }
 

@@ -160,6 +160,14 @@ class ReleaseInteractor @Inject constructor(
         }
     }
 
+    suspend fun startPlayback(id: EpisodeId, restart: Boolean = false) {
+        episodeUpdateMutex.withLock {
+            val access = episodesCheckerStorage.getEpisode(id) ?: EpisodeAccess.createDefault(id)
+            val startedAccess = access.forPlaybackStart(System.currentTimeMillis(), restart)
+            if (startedAccess != access) episodesCheckerStorage.putEpisode(startedAccess)
+        }
+    }
+
     private suspend fun updateEpisode(id: EpisodeId, block: (EpisodeAccess) -> EpisodeAccess) {
         episodeUpdateMutex.withLock {
             val access = episodesCheckerStorage.getEpisode(id) ?: EpisodeAccess.createDefault(id)
