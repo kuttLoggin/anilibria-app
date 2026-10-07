@@ -30,7 +30,8 @@ class CardsDataConverter(
             title.orEmpty(),
             description ?: descItems.joinToString(" • "),
             poster.orEmpty(),
-            LibriaCard.Type.Release(releaseItem.id)
+            LibriaCard.Type.Release(releaseItem.id),
+            releaseSeries = series,
         ).withReleaseStatus(blockedInfo, favoriteInfo, showFavoriteBadge)
     }
 

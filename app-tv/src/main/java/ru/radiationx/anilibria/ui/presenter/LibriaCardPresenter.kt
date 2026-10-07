@@ -72,6 +72,9 @@ class LibriaCardViewHolder(
     fun bind(item: LibriaCard) {
         detach()
         boundCard = item
+        containerView.bindWatchedRelease(
+            (item.type as? LibriaCard.Type.Release)?.releaseId, item.releaseSeries,
+        )
         when (item.type) {
             is LibriaCard.Type.Release -> containerView.setMainImageDimensions(
                 cardReleaseWidth,
@@ -94,6 +97,7 @@ class LibriaCardViewHolder(
     fun unbind() {
         detach()
         boundCard = null
+        containerView.bindWatchedRelease(null)
         containerView.mainImageView?.apply {
             showImageUrl(null)
             clearColorFilter()

@@ -12,6 +12,7 @@ data class LibriaCard(
     val isBlocked: Boolean = false,
     val isFavorite: Boolean = false,
     val showFavoriteBadge: Boolean = true,
+    val releaseSeries: String? = null,
 ) : CardItem {
 
     override fun getId(): Int {

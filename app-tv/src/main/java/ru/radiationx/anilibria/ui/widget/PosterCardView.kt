@@ -5,10 +5,9 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import androidx.core.content.ContextCompat
-import androidx.leanback.widget.ImageCardView
 import ru.radiationx.anilibria.R
 
-class PosterCardView(context: Context) : ImageCardView(context) {
+class PosterCardView(context: Context) : WatchedPosterCardView(context) {
 
     var showFavoriteBadge: Boolean = false
         set(value) {
