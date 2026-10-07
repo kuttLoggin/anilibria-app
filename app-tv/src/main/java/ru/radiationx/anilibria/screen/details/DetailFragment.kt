@@ -1,6 +1,8 @@
 package ru.radiationx.anilibria.screen.details
 
 import android.os.Bundle
+import android.os.Looper
+import android.os.MessageQueue
 import android.view.View
 import androidx.core.graphics.ColorUtils
 import androidx.leanback.app.RowsSupportFragment
@@ -9,7 +11,15 @@ import androidx.leanback.widget.ClassPresenterSelector
 import androidx.leanback.widget.ListRow
 import androidx.leanback.widget.Row
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import ru.radiationx.anilibria.common.BaseCardsViewModel
+import ru.radiationx.anilibria.common.CardItem
 import ru.radiationx.anilibria.common.GradientBackgroundManager
 import ru.radiationx.anilibria.common.LibriaCard
 import ru.radiationx.anilibria.common.LibriaDetailsRow
@@ -18,6 +28,7 @@ import ru.radiationx.anilibria.common.LoadingCard
 import ru.radiationx.anilibria.common.RowDiffCallback
 import ru.radiationx.anilibria.extension.applyCard
 import ru.radiationx.anilibria.extension.createCardsRowBy
+import ru.radiationx.anilibria.ui.presenter.LibriaCardPresenter
 import ru.radiationx.anilibria.ui.presenter.ReleaseDetailsPresenter
 import ru.radiationx.anilibria.ui.presenter.cust.CustomListRowPresenter
 import ru.radiationx.anilibria.ui.presenter.cust.CustomListRowViewHolder
@@ -28,6 +39,8 @@ import ru.radiationx.quill.viewModel
 import ru.radiationx.shared.ktx.android.getExtraNotNull
 import ru.radiationx.shared.ktx.android.putExtra
 import ru.radiationx.shared.ktx.android.subscribeTo
+import kotlin.coroutines.resume
+import kotlin.math.ceil
 
 data class DetailExtra(
     val id: ReleaseId,
@@ -46,6 +59,8 @@ class DetailFragment : RowsSupportFragment() {
     private val backgroundManager by inject<GradientBackgroundManager>()
 
     private var headerBackgroundImage: String? = null
+    private val preparedCardPresenters = mutableSetOf<LibriaCardPresenter>()
+    private val cardPreparationMutex = Mutex()
 
     private val argExtra by lazy {
         DetailExtra(id = getExtraNotNull(ARG_ID))
@@ -86,6 +101,7 @@ class DetailFragment : RowsSupportFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         headerBackgroundImage = null
+        preparedCardPresenters.clear()
         // Row updates must not pre-bind offscreen cards during the header transition.
         verticalGridView?.itemAnimator = null
 
@@ -150,6 +166,12 @@ class DetailFragment : RowsSupportFragment() {
         }
     }
 
+    override fun onDestroyView() {
+        preparedCardPresenters.forEach { it.clearPreparedViewHolders() }
+        preparedCardPresenters.clear()
+        super.onDestroyView()
+    }
+
     private fun createRowBy(
         rowId: Long,
         rowsAdapter: ArrayObjectAdapter,
@@ -161,7 +183,48 @@ class DetailFragment : RowsSupportFragment() {
             viewModel as DetailHeaderViewModel
         )
 
-        else -> createCardsRowBy(rowId, rowsAdapter, viewModel as BaseCardsViewModel)
+        else -> createCardsRowBy(rowId, rowsAdapter, viewModel as BaseCardsViewModel).also { row ->
+            subscribeTo(combine(viewModel.cardsData, headerViewModel.progressState) { cards, state ->
+                cards.takeUnless { state.loadingProgress }.orEmpty()
+            }) { cards -> prepareCards(row, cards) }
+        }
+    }
+
+    private fun prepareCards(row: ListRow, cards: List<CardItem>) {
+        val releaseCards = cards.filterIsInstance<LibriaCard>()
+        val card = releaseCards.firstOrNull() ?: return
+        val presenter = row.adapter.presenterSelector.getPresenter(card) as? LibriaCardPresenter
+            ?: return
+        if (!preparedCardPresenters.add(presenter)) return
+        viewLifecycleOwner.lifecycleScope.launch {
+            cardPreparationMutex.withLock {
+                val grid = verticalGridView ?: return@withLock
+                val cardWidth = resources.getDimension(ru.radiationx.anilibria.R.dimen.card_release_width)
+                val width = grid.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
+                val count = ceil(width / cardWidth.toDouble()).toInt()
+                    .coerceIn(1, 8).coerceAtMost(releaseCards.size)
+                repeat(count) {
+                    awaitMainThreadIdle()
+                    while (backgroundManager.isAnimating) {
+                        delay(16L)
+                        awaitMainThreadIdle()
+                    }
+                    if (!grid.isAttachedToWindow || grid.selectedPosition != 0) return@withLock
+                    presenter.prepareViewHolder(grid, releaseCards[it], count)
+                    delay(16L)
+                }
+            }
+        }
+    }
+
+    private suspend fun awaitMainThreadIdle() = suspendCancellableCoroutine<Unit> { continuation ->
+        val queue = Looper.myQueue()
+        val handler = MessageQueue.IdleHandler {
+            if (continuation.isActive) continuation.resume(Unit)
+            false
+        }
+        queue.addIdleHandler(handler)
+        continuation.invokeOnCancellation { queue.removeIdleHandler(handler) }
     }
 
     private fun createHeaderRowBy(
