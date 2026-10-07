@@ -253,7 +253,7 @@ their checkouts change.
 
 - Independent local branch from upstream/develop a188bfd5, checkout
   outputs/tv-release-actions-loading, topic commits 6d20768d, dc75fb61,
-  b0d07359, 93ebde45 and ba858fbe. No pending PR
+  b0d07359, 93ebde45, ba858fbe and a2485189. No pending PR
   dependency; it excludes watched-progress changes and local debug setup.
   The user authorized publication on 2026-10-07. The branch is pushed to the
   existing kuttLoggin/anilibria-app fork; upstream PR
@@ -312,7 +312,8 @@ their checkouts change.
   were also rechecked. Earlier playback scenarios were not rerun for this
   header-only change.
 - Latest installed cumulative APK:
-  outputs/tv-diagnostics/AniLiberty-TV-lower-scroll-debug.apk.
+  outputs/tv-diagnostics/AniLiberty-TV-row-preparation-debug.apk;
+  SHA256 AAD6F2BA64656D6488491818C6BFBEB2422703C1130E8DFFA19252CCA0B13EA1.
   Lower-row cards are prepared one at a time while the header is ready and the
   main queue is idle, waiting for background animations. Preparation is bounded
   to the first screen and eight cards per row; navigation down stops remaining
@@ -325,6 +326,23 @@ their checkouts change.
   around 187-231 ms versus one original 260 ms sample; the first row layout still
   causes a pause. These are diagnostic recordings, not a release benchmark.
   Evidence: outputs/tv-diagnostics/lower-scroll-validation.md.
+  Follow-up a2485189 replaces separate card preparation with complete bound
+  Leanback rows, laid out progressively offscreen after the ready header's next
+  frame. Public Recycler.bindViewToPosition assigns destination ownership;
+  ViewCacheExtension retains the prepared layout. Position/type/adapter/header/
+  card snapshots guard cache reuse. Selection callbacks are suppressed while
+  preparing, preserving visible focus/background. Preparation waits for idle and
+  background animation; early Down uses normal layout, and closing cancels pending
+  work and image requests. Shared LibriaCardPresenter changes are removed, keeping
+  cumulative poster-status features and the independent upstream presenter intact.
+  The independent PR now contains seven app-tv files.
+  Both builds and 75 cumulative tests pass. The final cumulative APK is installed
+  and checked on TCL: first Down takes 70.1 ms (RV Scroll 52.0 ms) in one diagnostic
+  trace, versus previous 187-231 ms samples. Right/Up/Back, both Bookworm rows,
+  opening the correct related release and returning, quick exit and early Down
+  are verified. Short draw stalls and cold header inflation remain; this is not
+  a statistical release benchmark. Dynamic row-data changes were not device-tested.
+  Evidence: outputs/tv-diagnostics/row-preparation-validation.md.
   Evidence: outputs/tv-diagnostics/release-actions-loading-validation.md and
   outputs/tv-diagnostics/release-content-loading-validation.md;
   Russian PR draft: outputs/pr-descriptions/tv-release-actions-loading.md.
