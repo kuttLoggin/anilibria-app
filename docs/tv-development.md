@@ -238,6 +238,14 @@ their checkouts change.
 
 ### feature/tv-watched-progress
 
+- 2026-10-08: PR #312 description links issue #197 as partially addressed.
+  The PR's code and tests confirm TV continuation advances to the next available
+  unviewed episode, including a newly released episode. Mobile behavior is retained,
+  unavailable future episodes are not stored, and all viewed episodes offer Restart
+  rather than the last episode. No issue-closing keyword is used. Only metadata was
+  updated; no new build or device check was run. Published body and unchanged head
+  `7c1683b1` were re-read after the update.
+
 - Local independent branch from current upstream/develop a188bfd5, checkout
   outputs/tv-watched-progress, topic commits e870c2ff, bfaf75f7 and 7c1683b1. No pending PR dependency.
   The user authorized publication on 2026-10-07. The branch is pushed to the
