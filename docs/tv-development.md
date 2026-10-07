@@ -25,6 +25,29 @@ TV debug setup and the topic changes recorded below.
 
 ## Feature and device records
 
+### fix/tv-background-banding
+
+- Independent topic from upstream/develop a188bfd5, checkout
+  `outputs/tv-background-banding`, commit `557cacdb`. The user authorized
+  publication on 2026-10-08. It is pushed to the existing kuttLoggin fork;
+  [PR #314](https://github.com/anilibria/anilibria-app/pull/314) is OPEN,
+  targeting develop. No pending PR dependency. The same source change is
+  committed to `tv-development` as `6dfbb4fe`; that cumulative branch was not pushed.
+- Background combines the original black-mask endpoints with the poster color
+  before drawing one opaque LinearGradient with Paint.DITHER_FLAG. Angle,
+  palette selection and both 500 ms animations are retained. The independent
+  topic contains only the two gradient files, excluding PR #313's isAnimating.
+- Both TV builds/test tasks pass. Cumulative: 75 tests, zero failures/errors.
+  Independent: unit tests NO-SOURCE. The final cumulative APK is installed on TCL.
+- Controlled old/new APK comparison on Takt Op. Destiny: a background-only
+  column's mean constant RGB run falls from 10.448 to 1.155 pixels; mean channel
+  values differ by less than 1/255. Main and recommendation/header navigation
+  are checked. Physical panel is 3840x2160, Android UI override is 1920x1080;
+  screenshots verify rendering before panel scaling, not subjective panel quality.
+- Evidence: [gradient-validation.md](../outputs/tv-diagnostics/gradient-validation.md).
+  APK: `outputs/tv-diagnostics/AniLiberty-TV-gradient-debug.apk`, SHA256
+  `9EE3FF86AA6DA8A0F23943EC2B9648EEA99F8318F30838FCD66423D6187A95A8`.
+
 The records below preserve the previous AGENTS.md entries. Test counts, APKs,
 device results and local integration statements describe earlier verification
 stages; they are not a fresh build or device check. Different cumulative test
