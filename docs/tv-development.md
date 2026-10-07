@@ -71,6 +71,21 @@ their checkouts change.
 
 ### fix/tv-controls-and-description
 
+- 2026-10-08 follow-up: description Left focuses the leftmost visible
+  action, Right the rightmost; Favorite is used for both when it is the only
+  action. The six-line change is applied to this cumulative checkout and
+  `outputs/tv-controls-and-description`. The user authorized publication after
+  device testing: topic commit `5c7f8965` is pushed to the existing fork's
+  PR #306. Its description is updated; the published head and body were
+  re-read and verified. The same follow-up is committed locally on
+  `tv-development`; that cumulative branch is not pushed.
+  Both TV build/test tasks pass; cumulative 75 tests, zero failures/errors,
+  topic unit tests NO-SOURCE. The new cumulative APK is installed on TCL.
+  Takt Op. Destiny, Fantasies of the River Backwaters and blocked Oshi no Ko 3
+  verify both directions, scrolled description and the single-action fallback.
+  Down scrolling and end-of-description transfer also remain verified.
+  Evidence: [description-focus-validation.md](../outputs/tv-diagnostics/description-focus-validation.md).
+
 - `fix/tv-controls-and-description` merges original PR #276 into current
   `upstream/develop`, then fixes controls auto-hide, skip timer lifecycle,
   description scrolling and single-line marquee for overflowing release
