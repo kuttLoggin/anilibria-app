@@ -253,7 +253,7 @@ their checkouts change.
 
 - Independent local branch from upstream/develop a188bfd5, checkout
   outputs/tv-release-actions-loading, topic commits 6d20768d, dc75fb61,
-  b0d07359 and 93ebde45. No pending PR
+  b0d07359, 93ebde45 and ba858fbe. No pending PR
   dependency; it excludes watched-progress changes and local debug setup.
   The user authorized publication on 2026-10-07. The branch is pushed to the
   existing kuttLoggin/anilibria-app fork; upstream PR
@@ -312,7 +312,19 @@ their checkouts change.
   were also rechecked. Earlier playback scenarios were not rerun for this
   header-only change.
 - Latest installed cumulative APK:
-  outputs/tv-diagnostics/AniLiberty-TV-loader-delay-arrow-debug.apk.
+  outputs/tv-diagnostics/AniLiberty-TV-lower-scroll-debug.apk.
+  Lower-row cards are prepared one at a time while the header is ready and the
+  main queue is idle, waiting for background animations. Preparation is bounded
+  to the first screen and eight cards per row; navigation down stops remaining
+  work. View destruction cancels jobs/callbacks and clears unused image requests.
+  Prepared holders bind again when their data snapshot differs.
+  Topic follow-up ba858fbe belongs to PR #313 and is applied to tv-development.
+  Both builds and 75 cumulative tests pass. The final cumulative APK is installed
+  on TCL; first Down, Right/Up/Back, both lower rows of Ascendance of a Bookworm,
+  and early exit/reopening are checked. Cold debug first-scroll frames remain
+  around 187-231 ms versus one original 260 ms sample; the first row layout still
+  causes a pause. These are diagnostic recordings, not a release benchmark.
+  Evidence: outputs/tv-diagnostics/lower-scroll-validation.md.
   Evidence: outputs/tv-diagnostics/release-actions-loading-validation.md and
   outputs/tv-diagnostics/release-content-loading-validation.md;
   Russian PR draft: outputs/pr-descriptions/tv-release-actions-loading.md.

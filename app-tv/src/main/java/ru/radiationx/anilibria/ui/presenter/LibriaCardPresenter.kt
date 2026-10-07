@@ -2,7 +2,9 @@ package ru.radiationx.anilibria.ui.presenter
 
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
+import android.view.View
 import android.view.ViewGroup
+import androidx.leanback.widget.ImageCardView
 import androidx.leanback.widget.Presenter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +23,37 @@ import ru.radiationx.shared_app.imageloader.showImageUrl
 
 class LibriaCardPresenter : Presenter() {
 
+    private val preparedHolders = java.util.ArrayDeque<ViewHolder>()
+    private val preparedItems = java.util.IdentityHashMap<ViewHolder, LibriaCard>()
+
+    // Called one card at a time while the release header is idle; holders stay unattached.
+    fun prepareViewHolder(parent: ViewGroup, card: LibriaCard, limit: Int) {
+        if (preparedHolders.size < limit) {
+            val holder = createViewHolder(parent)
+            onBindViewHolder(holder, card)
+            val cardView = holder.view as ImageCardView
+            val unspecified = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            cardView.measure(unspecified, unspecified)
+            cardView.layout(0, 0, cardView.measuredWidth, cardView.measuredHeight)
+            preparedHolders.addLast(holder)
+            preparedItems[holder] = card
+        }
+    }
+
+    fun clearPreparedViewHolders() {
+        preparedHolders.forEach { holder ->
+            onUnbindViewHolder(holder)
+            (holder.view as ImageCardView).mainImageView?.showImageUrl(null)
+        }
+        preparedHolders.clear()
+        preparedItems.clear()
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup): ViewHolder {
+        return preparedHolders.pollFirst() ?: createViewHolder(parent)
+    }
+
+    private fun createViewHolder(parent: ViewGroup): ViewHolder {
         val cardView = PosterCardView(parent.context)
         return LibriaCardViewHolder(cardView)
     }
@@ -30,7 +62,10 @@ class LibriaCardPresenter : Presenter() {
         item ?: return
         item as LibriaCard
         viewHolder as LibriaCardViewHolder
-        viewHolder.bind(item)
+        // Reuse the preparation only for the same snapshot; changed/reordered data binds normally.
+        if (preparedItems.remove(viewHolder) !== item) {
+            viewHolder.bind(item)
+        }
     }
 
     override fun onUnbindViewHolder(viewHolder: ViewHolder) {
