@@ -77,8 +77,9 @@ their checkouts change.
   `outputs/tv-controls-and-description`. The user authorized publication after
   device testing: topic commit `5c7f8965` is pushed to the existing fork's
   PR #306. Its description is updated; the published head and body were
-  re-read and verified. The same follow-up is committed locally on
-  `tv-development`; that cumulative branch is not pushed.
+  re-read and verified. The same follow-up is committed on `tv-development`
+  as `081c6b7a`. On 2026-10-08 the user also authorized pushing the cumulative
+  branch to the existing fork's `origin/tv-development`.
   Both TV build/test tasks pass; cumulative 75 tests, zero failures/errors,
   topic unit tests NO-SOURCE. The new cumulative APK is installed on TCL.
   Takt Op. Destiny, Fantasies of the River Backwaters and blocked Oshi no Ko 3
