@@ -157,6 +157,12 @@ class LibriaReleaseViewHolder(
             else -> binding.rowReleaseActionFavorite
         }
         binding.rowReleaseDescriptionCard.nextFocusDownId = firstAction.id
+        binding.rowReleaseDescriptionCard.nextFocusLeftId = firstAction.id
+        binding.rowReleaseDescriptionCard.nextFocusRightId = if (binding.rowReleaseActionOther.isVisible) {
+            binding.rowReleaseActionOther.id
+        } else {
+            binding.rowReleaseActionFavorite.id
+        }
         firstAction.requestFocus()
 
         binding.rowReleaseImageCard.showImageUrl(details.image)
