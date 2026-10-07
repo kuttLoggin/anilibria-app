@@ -238,6 +238,29 @@ their checkouts change.
 
 ### feature/tv-watched-progress
 
+- 2026-10-08 follow-up: fully viewed release posters now show a 3 dp
+  red stripe along the bottom of the image in Main, Watching, Schedule,
+  Catalog, quick search, recommendations and related releases. The detail
+  header poster and YouTube are excluded. Manual marks count; history changes
+  are reactive, and a newer list episode range refreshes the cached playlist.
+  The user authorized publication after testing. Topic commit `339a616e`
+  is pushed from `outputs/tv-watched-progress` to the existing fork's
+  `feature/tv-watched-progress`. PR #312 stays OPEN; its updated Russian
+  title/body and published head `339a616e` were re-read and verified.
+  The same changes are committed to `tv-development` as `0cbb557b`;
+  this cumulative branch and this verification record are also pushed.
+  Both TV builds/test tasks pass: cumulative 81 tests, independent 35,
+  zero failures/errors. Installed cumulative APK verified on TCL across all
+  listed screens, reset-history and manual mark-all. Original episode history
+  restored and fully compared after restart. New-episode behavior is unit-tested.
+  No data/mobile changes; those checks were not repeated. No functional
+  dependency on OPEN PR #311 (`25d1c3c8`), but both PRs edit the poster presenter,
+  LibriaCard and CardsDataConverter and require combining those edits on merge.
+  Existing #313 focus overlap is retained. Evidence:
+  [watched-posters-validation.md](../outputs/tv-diagnostics/watched-posters-validation.md).
+  APK: `outputs/tv-diagnostics/AniLiberty-TV-watched-posters-debug.apk`.
+  Published PR description is retained in `outputs/pr-descriptions/tv-watched-progress.md`.
+
 - 2026-10-08: PR #312 description links issue #197 as partially addressed.
   The PR's code and tests confirm TV continuation advances to the next available
   unviewed episode, including a newly released episode. Mobile behavior is retained,
