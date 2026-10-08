@@ -48,6 +48,57 @@ TV debug setup and the topic changes recorded below.
   APK: `outputs/tv-diagnostics/AniLiberty-TV-gradient-debug.apk`, SHA256
   `9EE3FF86AA6DA8A0F23943EC2B9648EEA99F8318F30838FCD66423D6187A95A8`.
 
+### fix/tv-startup-background
+
+- 2026-10-09: user approved the muted-red result and authorized a new PR.
+  Independent branch from current upstream/develop `a188bfd5`, checkout
+  `outputs/tv-startup-background`, commit `a4566a4c`. Pushed to the existing
+  kuttLoggin fork; [PR #315](https://github.com/anilibria/anilibria-app/pull/315)
+  is OPEN, targeting develop. Only the manager and MainFragment are included.
+  Startup behavior is adapted to upstream's existing color drawable; the
+  banding fix and cumulative debug setup are excluded. No pending PR dependency,
+  but manager edits overlap with #314's gradient rendering and #313's
+  isAnimating; their combined implementation is preserved in tv-development.
+- The loading color blends 35% accent with the neutral window background.
+  The user's hypothesis about an intended loading-screen to gray to red to
+  card-palette sequence is explicitly identified as a hypothesis in the PR.
+  Both before/after recordings are uploaded as GitHub attachments and rendered
+  as two video players in a Markdown table matching PR #314's layout.
+  Published body, two-file scope and head `a4566a4c` were re-read and verified.
+- Independent TV build/test tasks pass with JDK 17, unit tests NO-SOURCE.
+  Log: `outputs/tv-diagnostics/background-startup-topic-build.log`.
+  APK: `outputs/tv-diagnostics/AniLiberty-TV-startup-background-topic-debug.apk`,
+  SHA256 `040C5543553625A9E70E36AF7B44CF7FCEE42A77324D7769A3F75A35311E1161`.
+  Cumulative muted-red build has 81 passing tests, zero failures/errors;
+  its APK remains installed on TCL, and the user approved its appearance.
+  Evidence: [video report](../outputs/tv-diagnostics/pr-videos/README.md),
+  `outputs/tv-diagnostics/background-muted-red-build.log` and the published
+  PR HTML saved alongside the videos. The earlier full-red device checks and
+  their limits below still apply to the same transition logic.
+- The corresponding source changes are committed on tv-development as
+  `68f2b0dd`; this publication did not push the cumulative branch.
+
+Earlier local experiment (2026-10-09):
+
+- Local change on tv-development after `628a4dc8`: Main first appears on a neutral
+  background, then reveals the red accent over 500 ms. Red stays while loading
+  the selected card palette, followed by the existing 500 ms palette transition.
+  The reveal begins after a real fully opaque neutral frame has been drawn;
+  Leanback's delayed drawable installation previously hid the initial animation.
+- An early palette waits for the reveal to finish. New image selection and
+  leaving Main invalidate pending work. The red stage runs once per Activity;
+  returning from profile opens the current palette directly.
+- TV build and 81 unit tests pass. Final APK installed on TCL. Cold-launch
+  recording shows neutral to red, red while loading, then the card palette.
+  Card navigation, profile and return to Main checked. Early-palette and early
+  departure scenarios were not separately forced on the device.
+- At this experimental stage the source change remained local and separate
+  from open PR #314, whose remote
+  head `557cacdb` was checked on 2026-10-09.
+- Evidence and installed APK hash:
+  [background-red-loading-validation.md](../outputs/tv-diagnostics/background-red-loading-validation.md).
+  Earlier direct-palette variant: background-startup-validation.md.
+
 The records below preserve the previous AGENTS.md entries. Test counts, APKs,
 device results and local integration statements describe earlier verification
 stages; they are not a fresh build or device check. Different cumulative test
