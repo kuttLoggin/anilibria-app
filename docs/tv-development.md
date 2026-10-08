@@ -25,6 +25,36 @@ TV debug setup and the topic changes recorded below.
 
 ## Feature and device records
 
+### feature/tv-franchise-order
+
+- 2026-10-09: publication authorized by the user. Independent branch
+  `feature/tv-franchise-order` from current upstream/develop `a188bfd5`, checkout
+  `outputs/tv-franchise-order`, commit `98cce37f` is pushed to the existing fork.
+  [PR #316](https://github.com/anilibria/anilibria-app/pull/316) is OPEN,
+  targeting develop. The cumulative integration is committed locally to
+  `tv-development` as `1b309a46`; this branch was not pushed.
+  Related posters now include the current release, use API
+  ordinal badges, and mark the current poster with «Открыт». The matching
+  generated watch-order block is removed from the TV description while prose
+  and unrecognised notes are retained. Optional ordinal is mapped in shared data.
+- Both TV/mobile builds and TV/data tests pass offline: cumulative 85/17 tests,
+  independent 4/2, zero failures/errors. Cumulative debug APK installed on TCL;
+  JoJo #1–#5, current-card OK, opening #1/Back/Up, and Takt Op. Destiny without
+  a franchise checked. Independent APK and mobile UI were not device-tested.
+- No functional dependency on pending PRs; poster/model edits overlap #311/#312,
+  converter edits overlap #308/#312. Independent version uses its own poster
+  class; cumulative retains favorite/watched badges. All relevant PRs remain
+  OPEN in the live GitHub check.
+- Evidence: [franchise-order-validation.md](../outputs/tv-diagnostics/franchise-order-validation.md).
+  APK: `outputs/tv-diagnostics/AniLiberty-TV-franchise-order-debug.apk`.
+  Fresh screenshot `franchise-pr-current.png` shows Golden Wind selected as #3.
+  It is embedded in a Markdown table in the PR body. Browser upload was
+  unavailable; the PNG is stored outside the code PR in fork branch
+  `pr-media/tv-franchise-order`, commit `1ea14ede`. Public image HTTP 200 and
+  GitHub-rendered HTML table/image, exact PR body, 13-file scope and head
+  `98cce37f` were verified after creation. Existing successful builds/tests
+  were not repeated for publication; source contents are unchanged.
+
 ### fix/tv-background-banding
 
 - Independent topic from upstream/develop a188bfd5, checkout
