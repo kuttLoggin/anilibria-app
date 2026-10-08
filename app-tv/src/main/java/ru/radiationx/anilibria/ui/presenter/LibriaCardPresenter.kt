@@ -72,6 +72,8 @@ class LibriaCardViewHolder(
     fun bind(item: LibriaCard) {
         detach()
         boundCard = item
+        containerView.franchiseOrdinal = item.franchiseOrdinal
+        containerView.isCurrentRelease = item.isCurrentRelease
         containerView.bindWatchedRelease(
             (item.type as? LibriaCard.Type.Release)?.releaseId, item.releaseSeries,
         )
@@ -97,6 +99,8 @@ class LibriaCardViewHolder(
     fun unbind() {
         detach()
         boundCard = null
+        containerView.franchiseOrdinal = null
+        containerView.isCurrentRelease = false
         containerView.bindWatchedRelease(null)
         containerView.mainImageView?.apply {
             showImageUrl(null)
@@ -133,6 +137,8 @@ class LibriaCardViewHolder(
         containerView.showFavoriteBadge = visible
         containerView.contentDescription = listOfNotNull(
             item.title,
+            item.franchiseOrdinal?.let { "№$it в порядке просмотра" },
+            "Открыт сейчас".takeIf { item.isCurrentRelease },
             item.description.takeIf { item.isBlocked },
             "В избранном".takeIf { visible },
         ).joinToString(". ")

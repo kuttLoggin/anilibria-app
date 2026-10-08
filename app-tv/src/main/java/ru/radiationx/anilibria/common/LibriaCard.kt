@@ -13,6 +13,8 @@ data class LibriaCard(
     val isFavorite: Boolean = false,
     val showFavoriteBadge: Boolean = true,
     val releaseSeries: String? = null,
+    val franchiseOrdinal: Int? = null,
+    val isCurrentRelease: Boolean = false,
 ) : CardItem {
 
     override fun getId(): Int {
