@@ -54,6 +54,11 @@ TV debug setup and the topic changes recorded below.
   GitHub-rendered HTML table/image, exact PR body, 13-file scope and head
   `98cce37f` were verified after creation. Existing successful builds/tests
   were not repeated for publication; source contents are unchanged.
+- PR #316 description follow-up: introduction now attributes the feature to
+  the original aniliberty.top website. Watch-order references in prose use
+  «№1–№5» and «№3», preventing GitHub issue autolinks. Published body and rendered
+  HTML were re-read: no accidental issue references, screenshot table retained,
+  head unchanged at `98cce37f`. Metadata only; no build/device rerun.
 
 ### fix/tv-background-banding
 
