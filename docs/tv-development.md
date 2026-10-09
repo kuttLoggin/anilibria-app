@@ -25,6 +25,54 @@ TV debug setup and the topic changes recorded below.
 
 ## Feature and device records
 
+### feature/tv-timeline-skips
+
+- 2026-10-10: prepared locally from current upstream/develop `a188bfd5`,
+  checkout `outputs/tv-timeline-skips`, branch `feature/tv-timeline-skips`.
+  Published after user verification and explicit authorization:
+  [PR #317](https://github.com/anilibria/anilibria-app/pull/317), OPEN,
+  targeting develop, topic commit `aff5b12b` pushed to the existing fork.
+  Same feature is integrated locally in `tv-development` as `224221a6`;
+  the cumulative branch was not pushed.
+- TV timeline shows opening and ending ranges in one light gray color, with labels using
+  existing episode skips. Leanback focus/seek behavior and position thumb remain.
+  Unknown duration/invalid ranges are hidden; bounds are clipped to duration.
+  Changing video clears the old duration. Space above the track is reserved
+  before the first layout, including episodes without ranges and loading states.
+  No new API integration; no shared data/mobile changes.
+- Both offline TV builds/unit-test tasks pass: cumulative 91, independent 6,
+  failures/errors = 0. Cumulative debug APK installed on TCL. Opening display,
+  focus/preview/confirm/cancel, Watch dismissal, Next and a marker-free episode
+  checked. Original history and skip-timer preference restored and compared.
+- Takt Op. Destiny episode 11 has an ending in v1, but the current legacy
+  API returns `ending=[]`. Both API responses were checked again on publication:
+  v1 ending is 22:10–23:41 (`start=1330`, `stop=1421`); the cause of the legacy
+  omission is unknown. User excluded v1 integration. Range validation for both
+  types is unit-tested; ending rendering could not be checked on the device.
+  No functional pending PR dependency; glue/fragment overlap #306/#312.
+- Evidence: [timeline-validation.md](../outputs/tv-diagnostics/timeline-validation.md).
+  APK: `outputs/tv-diagnostics/AniLiberty-TV-timeline-debug.apk`.
+  Local PR description: `outputs/pr-descriptions/tv-timeline-skips.md`.
+- Final color refinement uses one light gray `#B8B8B8` for both ranges/labels.
+  Both TV builds/tests pass again (91/6); installed and checked on TCL episode 11,
+  including seek preview. Final screenshot: `outputs/tv-diagnostics/timeline-gray.png`.
+- Follow-up fixes: played portions of ranges now use burgundy `#8F1F1F`,
+  with stronger contrast than the initially tested `#C62828`. A fixed 48 dp
+  timeline height prevents the title/buttons moving when duration arrives.
+  The visual track uses one geometry for progress, buffer, ranges and labels;
+  native Leanback still handles keys, seeking and accessibility. Focus changes
+  only the thumb radius, without moving its center or the track.
+- Both final offline builds/tests pass (91/6, zero failures/errors).
+  Installed APK SHA256 `9A0A3E93B735E65467EDF3C66F03F400CA823D30E61EA81FCEF108D75D79EDA1`.
+  TCL episode 11: recorded loading before/after duration, compared paused
+  progress/Next focus pixel coordinates, checked partial/full played ranges
+  and cancel seek. Label crop is identical; buffered end remains at x=572.
+  Evidence: `outputs/tv-diagnostics/timeline-layout-final-load.mp4`,
+  `timeline-final-pixel-check.txt`, `timeline-burgundy-preview-final.png`.
+- Published PR body and head SHA were re-read: only the eight topic files are
+  included, with device/build evidence and the explicit ending verification limit.
+  Workflow documents, diagnostic outputs and local debug setup are excluded.
+
 ### feature/tv-franchise-order
 
 - 2026-10-09: publication authorized by the user. Independent branch
