@@ -25,6 +25,64 @@ TV debug setup and the topic changes recorded below.
 
 ## Feature and device records
 
+### Local release-row scrolling fix
+
+- 2026-10-10: local, uncommitted change on `tv-development` in the shared
+  `CustomListRowPresenter` / `CustomListRowViewHolder`. Removing the outgoing
+  row's description with `GONE` immediately shrank the row during downward
+  scrolling. Its space now collapses with Leanback's existing selection
+  animation and returns to `GONE` at the end. The user rejected an earlier
+  permanent space reservation; final unselected rows retain compact spacing.
+- Offline TV assembly and all 91 existing unit tests pass, zero failures/errors.
+  Final cumulative APK installed on TCL Smart TV Pro. Main and Schedule checked
+  down/up, rapid direction changes, horizontal focus and return to Main.
+  Other consumers of the shared row presenter were not separately device-tested.
+  No shared data/mobile changes. No PR or push; existing PRs remain open in the
+  live GitHub check before implementation.
+- Evidence: [row-scroll-validation.md](../outputs/tv-diagnostics/row-scroll-validation.md).
+  APK: `outputs/tv-diagnostics/AniLiberty-TV-row-scroll-debug.apk`.
+- User-requested fresh Main recordings before/after: both exported as FHD,
+  60 fps CFR, 14 seconds, with the same three Down / three Up scenario.
+  Variable capture timing is preserved using frame repetition, without motion
+  interpolation. Original VFR recordings retained; the fixed APK is restored
+  on TCL. [Videos and capture details](../outputs/tv-diagnostics/row-scroll-comparison/README.md).
+- Capture limitation follow-up: the user sees jumps more clearly on the physical
+  TV. Android UI is 60 Hz, but runtime exposes only software video encoders;
+  the MediaTek encoder described in vendor XML is unavailable. Direct scrcpy
+  FHD capture does not sustain 60 fps; 720p captures motion more densely.
+  CFR exports are not proof of physical-panel smoothness.
+  [Evidence](../outputs/tv-diagnostics/row-scroll-comparison/native-capture-investigation.md).
+- Header/poster overlap follow-up: the user reported a header displacement at
+  the start of both Up and Down transitions. Leanback immediately switched the
+  expanded grid's top padding between 32 and 16 px while the poster still had
+  its focus zoom. Expanded custom rows now keep the selected top padding,
+  including the standard header baseline adjustment. Only unselected expanded
+  grids gain 8 dp; the description still collapses without a permanent gap.
+  Temporary pre-draw geometry logging on TCL measured a minimum poster/header
+  bounds gap of -9.90 px before and +6.10 px after on Main, and +6.10 px after on
+  Schedule including rapid reversals. This is geometry evidence, not a panel
+  smoothness benchmark. The logger was removed before final assembly.
+  Offline assembly and all 91 existing TV tests pass; final APK installed on TCL:
+  `outputs/tv-diagnostics/AniLiberty-TV-row-header-debug.apk`, SHA256
+  `8A493A15907B8D28622A71663B36D4E214EED281E41F4478167111E58B43F661`.
+  [Evidence](../outputs/tv-diagnostics/row-header-validation.md).
+- Publication authorized on 2026-10-10: independent branch
+  `fix/tv-release-row-scroll` from upstream/develop `a188bfd5`, checkout
+  `outputs/tv-release-row-scroll`, topic commit `7a20eb25`, pushed to the existing
+  fork. [PR #318](https://github.com/anilibria/anilibria-app/pull/318) is OPEN,
+  targeting develop. It changes only the two shared row files, has no pending
+  PR dependency, and excludes debug setup and workflow documents. Its offline TV
+  assembly passes; the independent unit-test task is `NO-SOURCE`.
+  The same fix is committed locally on `tv-development` as `95ad2e6f`; the
+  cumulative branch was not pushed.
+  Fresh native 1280x720 recordings of Main before the whole fix and after the
+  final fix are uploaded as GitHub user attachments and embedded in PR #318.
+  Both video players were confirmed via rendered PR HTML, and both assets
+  returned HTTP 206 / video/mp4 for a one-byte range GET. The PR states the TCL
+  capture-fps limitation and recommends checking the actual device and using
+  one's own measurement tools. The final debug APK remains installed on TCL.
+  [720p recording evidence](../outputs/tv-diagnostics/row-scroll-comparison/720p-pr-318.md).
+
 ### feature/tv-timeline-skips
 
 - 2026-10-10: prepared locally from current upstream/develop `a188bfd5`,
